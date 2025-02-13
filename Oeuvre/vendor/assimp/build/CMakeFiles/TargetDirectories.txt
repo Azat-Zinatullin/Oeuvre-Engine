@@ -1,0 +1,13 @@
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/CMakeFiles/uninstall.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/CMakeFiles/UpdateAssimpLibsDebugSymbolsAndDLLs.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/CMakeFiles/INSTALL.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/CMakeFiles/ALL_BUILD.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/CMakeFiles/ZERO_CHECK.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/contrib/zlib/CMakeFiles/zlibstatic.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/contrib/zlib/CMakeFiles/INSTALL.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/contrib/zlib/CMakeFiles/ALL_BUILD.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/code/CMakeFiles/assimp.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/code/CMakeFiles/INSTALL.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/test/CMakeFiles/unit.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/test/CMakeFiles/INSTALL.dir
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/build/test/headercheck/CMakeFiles/INSTALL.dir

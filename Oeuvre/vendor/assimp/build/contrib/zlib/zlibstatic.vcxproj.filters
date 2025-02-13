@@ -1,0 +1,96 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\adler32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\compress.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\crc32.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\deflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\gzclose.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\gzlib.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\gzread.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\gzwrite.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inflate.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\infback.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inftrees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inffast.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\trees.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\uncompr.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\zutil.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\build\contrib\zlib\zconf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\zlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\crc32.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\deflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\gzguts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inffast.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inffixed.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inflate.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\inftrees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\trees.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\zutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="E:\Development\Projects\C_C++\Oeuvre Engine\Oeuvre\vendor\assimp\contrib\zlib\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{C157D85C-C77B-3669-967A-195097DC1A4B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A2B9C1E2-EF85-3701-841D-FFB65693173E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

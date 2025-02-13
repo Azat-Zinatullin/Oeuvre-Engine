@@ -1,0 +1,10 @@
+# CMake generation dependency list for this directory.
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckCSourceCompiles.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckFunctionExists.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckIncludeFile.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckIncludeFileCXX.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/CheckTypeSize.cmake
+C:/Program Files/CMake/share/cmake-3.30/Modules/Internal/CheckSourceCompiles.cmake
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/contrib/zlib/CMakeLists.txt
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/contrib/zlib/zconf.h.cmakein
+E:/Development/Projects/C_C++/Oeuvre Engine/Oeuvre/vendor/assimp/contrib/zlib/zlib.pc.cmakein
