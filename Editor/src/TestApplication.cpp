@@ -603,10 +603,10 @@ void TestApplication::RenderLoop()
 				modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
 				modelMat = glm::scale(modelMat, glm::vec3(scale, scale, scale));			
 				RenderCube(modelMat);
-			}			
+			}		
+			renderPhysics(deltaTime);
 			//RenderModelBounds(0);
-		}
-		renderPhysics(deltaTime);
+		}		
 		RenderToGBufferEnd();
 
 		//std::cout << "Meshes drawn: " << m_MeshesDrawn << '\n';
