@@ -1,0 +1,196 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BB668CC7-A708-B79D-90C3-CAF17C043EEE}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Oeuvre</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="..\packages\NVAPI.1.0.440\build\NVAPI.props" Condition="Exists('..\packages\NVAPI.1.0.440\build\NVAPI.props')" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\bin\Debug-windows-x86_64\Oeuvre\</OutDir>
+    <IntDir>..\bin-int\Debug-windows-x86_64\Oeuvre\</IntDir>
+    <TargetName>Oeuvre</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\bin\Release-windows-x86_64\Oeuvre\</OutDir>
+    <IntDir>..\bin-int\Release-windows-x86_64\Oeuvre\</IntDir>
+    <TargetName>Oeuvre</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>OV_PLATFORM_WINDOWS;OV_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\imgui;vendor\glm;vendor\assimp\include;vendor\PhysX\include;vendor\fmod\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>assimp-vc143-mt.lib;GFSDK_VXGI_x64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_64.lib;PhysXPvdSDK_static_64.lib;PhysXCommon_64.lib;PhysX_64.lib;PVDRuntime_64.lib;fmod_vc.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>OV_PLATFORM_WINDOWS;OV_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\imgui;vendor\glm;vendor\assimp\include;vendor\PhysX\include;vendor\fmod\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>assimp-vc143-mt.lib;GFSDK_VXGI_x64.lib;PhysXExtensions_static_64.lib;PhysXFoundation_64.lib;PhysXPvdSDK_static_64.lib;PhysXCommon_64.lib;PhysX_64.lib;PVDRuntime_64.lib;fmod_vc.lib;fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Oeuvre\Core\Application.h" />
+    <ClInclude Include="src\Oeuvre\Core\Entity.h" />
+    <ClInclude Include="src\Oeuvre\Core\EntryPoint.h" />
+    <ClInclude Include="src\Oeuvre\Core\Log.h" />
+    <ClInclude Include="src\Oeuvre\Core\Win.h" />
+    <ClInclude Include="src\Oeuvre\Core\Window.h" />
+    <ClInclude Include="src\Oeuvre\Events\Event.h" />
+    <ClInclude Include="src\Oeuvre\Events\EventHandler.h" />
+    <ClInclude Include="src\Oeuvre\Events\KeyEvents.h" />
+    <ClInclude Include="src\Oeuvre\Events\MouseEvents.h" />
+    <ClInclude Include="src\Oeuvre\Events\WindowEvents.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\AnimData.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Animation.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Animator.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Bone.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Buffer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Camera.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Frustum.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Mesh.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Model.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RenderTexture.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Renderer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RendererAPI.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Shader.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Texture.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\VertexArray.h" />
+    <ClInclude Include="src\Oeuvre\Utils\AssimpGLMHelpers.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Buffer.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11GBuffer.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11GeometryShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11InputLayout.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11PixelShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11RendererAPI.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Shader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Texture2D.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexArray.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexShader.h" />
+    <ClInclude Include="src\Platform\Nvidia\BindingHelpers.h" />
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_NVRHI.h" />
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_NVRHI_D3D11.h" />
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_VXGI.h" />
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_VXGI_MathTypes.h" />
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Oeuvre\Core\Application.cpp" />
+    <ClCompile Include="src\Oeuvre\Events\EventHandler.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Frustum.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Mesh.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Model.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RenderTexture.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RendererAPI.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Texture.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\VertexArray.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Buffer.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11GBuffer.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11GeometryShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11InputLayout.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11PixelShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11RendererAPI.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Shader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Texture2D.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexArray.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexShader.cpp" />
+    <ClCompile Include="src\Platform\Nvidia\GFSDK_NVRHI_D3D11.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">
+      <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\imgui\imgui.vcxproj">
+      <Project>{0098A80F-6CAC-D0C0-352E-7420A101CDF1}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\NVAPI.1.0.440\build\NVAPI.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NVAPI.1.0.440\build\NVAPI.props'))" />
+  </Target>
+</Project>

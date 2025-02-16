@@ -13,11 +13,16 @@
 
 namespace Oeuvre
 {
+	constexpr int MAX_BONE_INFLUENCE = 4;
+	constexpr int MAX_BONES = 100;
+
 	struct Vertex
 	{
 		glm::vec3 Pos;
 		glm::vec2 Tex;
 		glm::vec3 Normal;
+		int m_BoneIDs[MAX_BONE_INFLUENCE];
+		float m_Weights[MAX_BONE_INFLUENCE];
 	};
 
 	enum class TextureType
@@ -47,7 +52,7 @@ namespace Oeuvre
 
 		~Mesh();
 
-		void Draw(const std::shared_ptr<Shader>& vertexShader, const std::shared_ptr<Shader>& pixelShader, bool applyTextures);
+		void Draw(bool applyTextures);
 
 		size_t GetNumVertices() { return m_Vertices.size(); }
 		Vertex* GetVertices() { return m_Vertices.data(); }

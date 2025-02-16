@@ -1,0 +1,246 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre">
+      <UniqueIdentifier>{F23FEB24-DEF7-2C72-47FF-05CE33D6C762}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Core">
+      <UniqueIdentifier>{8A2BC41C-F6B6-31E1-FFC7-B4D56BD28DE1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Events">
+      <UniqueIdentifier>{96479F63-025E-9DF9-4BD5-281BB72A6E81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Renderer">
+      <UniqueIdentifier>{D8938ABF-44F5-67CD-CD62-AE7F39C39E8C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Utils">
+      <UniqueIdentifier>{D2EE91B6-BEE7-B008-E719-968DD3719014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform">
+      <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\DirectX11">
+      <UniqueIdentifier>{2549C2B7-1143-EB09-FAAF-811AE6485176}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\Nvidia">
+      <UniqueIdentifier>{0B1AAE35-777B-8B43-00E9-D1F56C49C202}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\Windows">
+      <UniqueIdentifier>{5B054582-4794-CE4B-F0B2-E246DC20DFF1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Oeuvre\Core\Application.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Entity.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\EntryPoint.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Log.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Win.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Window.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\Event.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\EventHandler.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\KeyEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\MouseEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\WindowEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\AnimData.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Animation.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Animator.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Bone.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Buffer.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Camera.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Frustum.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Mesh.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Model.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RenderTexture.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Renderer.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RendererAPI.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Shader.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Texture.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\VertexArray.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\AssimpGLMHelpers.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Buffer.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11GBuffer.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11GeometryShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11InputLayout.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11PixelShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11RendererAPI.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Shader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Texture2D.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexArray.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Nvidia\BindingHelpers.h">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_NVRHI.h">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_NVRHI_D3D11.h">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_VXGI.h">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Nvidia\GFSDK_VXGI_MathTypes.h">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
+      <Filter>src\Platform\Windows</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Oeuvre\Core\Application.cpp">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Events\EventHandler.cpp">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Buffer.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Camera.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Frustum.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Mesh.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Model.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RenderTexture.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Renderer.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RendererAPI.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Shader.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Texture.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\VertexArray.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Buffer.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11GBuffer.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11GeometryShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11InputLayout.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11PixelShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11RendererAPI.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Shader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Texture2D.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexArray.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Nvidia\GFSDK_NVRHI_D3D11.cpp">
+      <Filter>src\Platform\Nvidia</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
+      <Filter>src\Platform\Windows</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

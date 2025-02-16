@@ -12,6 +12,8 @@
 #include "Platform/DirectX11/DX11RendererAPI.h"
 #include <WICTextureLoader.h>
 
+#include "../Utils/AssimpGLMHelpers.h"
+
 aiTextureType textureTypes[]{
 
 	/** The texture is combined with the result of the diffuse
@@ -141,7 +143,7 @@ namespace Oeuvre
 		: m_filePath(filePath)
 	{
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph); //| aiProcess_GenSmoothNormals | );
+		const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs);// | aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph | aiProcess_FindInvalidData | aiProcess_RemoveRedundantMaterials); //| aiProcess_GenSmoothNormals | );
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
 		{
 			std::cout << "ASSIMP::ERROR::Can't load model! " << importer.GetErrorString() << '\n';
@@ -188,7 +190,7 @@ namespace Oeuvre
 	{
 	}
 
-	int Model::Draw(const std::shared_ptr<Shader>& vertexShader, const std::shared_ptr<Shader>& pixelShader, const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum)
+	int Oeuvre::Model::Draw(const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum)
 	{
 		if (m_pTextureAlbedo.get())
 			m_pTextureAlbedo->Bind(0);
@@ -240,13 +242,13 @@ namespace Oeuvre
 			{
 				if (frustum->CheckCube(meshBounds.lower, meshBounds.upper))
 				{
-					m_meshes[i].Draw(vertexShader, pixelShader, !m_bUseCombinedTextures);
+					m_meshes[i].Draw(!m_bUseCombinedTextures);
 					meshesDrawn++;
 				}
 			}
 			else
 			{
-				m_meshes[i].Draw(vertexShader, pixelShader, !m_bUseCombinedTextures);
+				m_meshes[i].Draw(!m_bUseCombinedTextures);
 				meshesDrawn++;
 			}
 		}
@@ -311,6 +313,9 @@ namespace Oeuvre
 		for (unsigned int i = 0; i < mesh->mNumVertices; i++)
 		{
 			Vertex vertex;
+
+			SetVertexBoneDataToDefault(vertex);
+
 			vertex.Pos.x = mesh->mVertices[i].x;
 			vertex.Pos.y = mesh->mVertices[i].y;
 			vertex.Pos.z = mesh->mVertices[i].z;
@@ -374,8 +379,8 @@ namespace Oeuvre
 					material->GetTexture(textureTypes[i], 0, &path);
 
 					aiString texFullPath{};
-					if (m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\sponza\\glTF\\Sponza.gltf" ||
-						m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx" || true)
+					if (m_filePath == "..\\resources\\sponza\\glTF\\Sponza.gltf" ||
+						m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx")
 					{
 						std::string filePath = m_filePath;
 						int lastSlashPos = filePath.find_last_of('\\');
@@ -388,11 +393,11 @@ namespace Oeuvre
 							std::cout << "New model path:" << filePath << '\n';
 						}
 
-						char fullPath[256];
+						char fullPath[1024];
 						if (m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx")
 						{
 							std::string pathStr = path.C_Str();
-							snprintf(fullPath, 256, "%s%s", "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\", pathStr.c_str());
+							snprintf(fullPath, 1024, "%s%s", "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\", pathStr.c_str());
 							std::cout << "Bistro path: " << fullPath << '\n';
 						}
 						else
@@ -410,7 +415,7 @@ namespace Oeuvre
 							//	}*/
 							//	std::cout << "New texture path: " << pathStr;
 							//}								
-							snprintf(fullPath, 256, "%s%s%s", filePath.c_str(), "\\", pathStr.c_str());
+							snprintf(fullPath, 1024, "%s%s%s", filePath.c_str(), "\\", pathStr.c_str());
 						}
 
 						texFullPath.Set(fullPath);
@@ -452,6 +457,64 @@ namespace Oeuvre
 				}
 			}
 		}
+		ExtractBoneWeightForVertices(vertices, mesh, scene);
 		return Mesh(vertices, indices, materialName, textures, meshBounds);
 	}
+	void Model::SetVertexBoneDataToDefault(Vertex& vertex)
+	{
+		for (int i = 0; i < MAX_BONE_INFLUENCE; i++)
+		{
+			vertex.m_BoneIDs[i] = -1;
+			vertex.m_Weights[i] = 0.0f;
+		}
+	}
+
+	void Model::SetVertexBoneData(Vertex& vertex, int boneID, float weight)
+	{
+		for (int i = 0; i < MAX_BONE_INFLUENCE; ++i)
+		{
+			if (vertex.m_BoneIDs[i] < 0)// || vertex.m_BoneIDs[i] > MAX_BONES)
+			{
+				vertex.m_Weights[i] = weight;
+				vertex.m_BoneIDs[i] = boneID;
+				break;
+			}
+		}
+	}
+
+	void Model::ExtractBoneWeightForVertices(std::vector<Vertex>& vertices, aiMesh* mesh, const aiScene* scene)
+	{
+		for (int boneIndex = 0; boneIndex < mesh->mNumBones; ++boneIndex)
+		{
+			int boneID = -1;
+			std::string boneName = mesh->mBones[boneIndex]->mName.C_Str();
+			if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end())
+			{
+				BoneInfo newBoneInfo;
+				newBoneInfo.id = m_BoneCounter;
+				newBoneInfo.offset = AssimpGLMHelpers::ConvertMatrixToGLMFormat(
+					mesh->mBones[boneIndex]->mOffsetMatrix);
+				m_BoneInfoMap[boneName] = newBoneInfo;
+				boneID = m_BoneCounter;
+				m_BoneCounter++;
+			}
+			else
+			{
+				boneID = m_BoneInfoMap[boneName].id;
+			}
+			assert(boneID != -1);
+			auto weights = mesh->mBones[boneIndex]->mWeights;
+			int numWeights = mesh->mBones[boneIndex]->mNumWeights;
+
+			for (int weightIndex = 0; weightIndex < numWeights; ++weightIndex)
+			{
+				int vertexId = weights[weightIndex].mVertexId;
+				float weight = weights[weightIndex].mWeight;
+				assert(vertexId <= vertices.size());
+				SetVertexBoneData(vertices[vertexId], boneID, weight);
+			}
+		}
+	}
+
+
 }

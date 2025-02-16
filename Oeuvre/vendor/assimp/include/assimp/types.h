@@ -165,9 +165,9 @@ struct aiRay {
 struct aiColor3D {
 #ifdef __cplusplus
     aiColor3D() AI_NO_EXCEPT : r(0.0f), g(0.0f), b(0.0f) {}
-    aiColor3D(float _r, float _g, float _b) :
+    aiColor3D(ai_real _r, ai_real _g, ai_real _b) :
             r(_r), g(_g), b(_b) {}
-    explicit aiColor3D(float _r) :
+    explicit aiColor3D(ai_real _r) :
             r(_r), g(_r), b(_r) {}
     aiColor3D(const aiColor3D &o) :
             r(o.r), g(o.g), b(o.b) {}
@@ -214,12 +214,12 @@ struct aiColor3D {
     }
 
     /** Access a specific color component */
-    float operator[](unsigned int i) const {
+    ai_real operator[](unsigned int i) const {
         return *(&r + i);
     }
 
     /** Access a specific color component */
-    float &operator[](unsigned int i) {
+    ai_real &operator[](unsigned int i) {
         if (0 == i) {
             return r;
         } else if (1 == i) {
@@ -232,14 +232,14 @@ struct aiColor3D {
 
     /** Check whether a color is black */
     bool IsBlack() const {
-        static const float epsilon = float(10e-3);
+        static const ai_real epsilon = ai_real(10e-3);
         return std::fabs(r) < epsilon && std::fabs(g) < epsilon && std::fabs(b) < epsilon;
     }
 
 #endif // !__cplusplus
 
     //! Red, green and blue color values
-    float r, g, b;
+    ai_real r, g, b;
 }; // !struct aiColor3D
 
 // ----------------------------------------------------------------------------------

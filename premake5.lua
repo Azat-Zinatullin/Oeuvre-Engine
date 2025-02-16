@@ -47,6 +47,7 @@ project "Oeuvre"
 		"%{prj.name}/vendor/glm",
 		"%{prj.name}/vendor/assimp/include",
 		"%{prj.name}/vendor/PhysX/include",
+		"%{prj.name}/vendor/fmod/include",
 	}
 
 	libdirs
@@ -58,7 +59,7 @@ project "Oeuvre"
 	{
 		"GLFW",
 		"imgui",
-		"assimp-vc143-mtd.lib",
+		"assimp-vc143-mt.lib",
 		"GFSDK_VXGI_x64.lib",
 		"PhysXExtensions_static_64.lib",
 		"PhysXFoundation_64.lib",
@@ -68,7 +69,9 @@ project "Oeuvre"
 		--"PhysXVehicle2_static_64.lib",
 		"PhysXCommon_64.lib",
 		"PhysX_64.lib",
-		"PVDRuntime_64.lib"	
+		"PVDRuntime_64.lib",
+		"fmod_vc.lib",
+		"fmodL_vc.lib"
 	}
 
 	filter "system:windows"
@@ -124,7 +127,8 @@ project "Editor"
 		"Oeuvre/vendor/imgui",
 		"Oeuvre/vendor/glm",
 		"Oeuvre/vendor/assimp/include",
-		"Oeuvre/vendor/PhysX/include"
+		"Oeuvre/vendor/PhysX/include",
+		"Oeuvre/vendor/fmod/include"
 	}
 
 	links

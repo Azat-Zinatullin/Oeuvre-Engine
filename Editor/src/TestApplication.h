@@ -28,6 +28,13 @@
 
 #include "PxPhysicsAPI.h"
 #include "foundation/PxPreprocessor.h"
+
+#include "fmod.hpp"
+#include "fmod_errors.h"
+
+#include "Oeuvre/Renderer/Animator.h"
+#include "GamePad.h"
+
 #define PVD_HOST "127.0.0.1"
 
 using namespace physx;
@@ -99,19 +106,19 @@ protected:
 
 	void SaveTextureToFile(ID3D11Texture2D* d3dTexture, const std::string fileName);
 
-	std::vector<Camera> cameras;
+	std::vector<Camera> m_Cameras;
 
 	float lastX = 0.f, lastY = 0.f;
 	bool viewPortActive = false;
 	bool keyPressed = false;
 
-	float deltaTime = 0.f, lastFrame = 0.f;
+	float m_DeltaTime = 0.f, m_LastFrame = 0.f;
 
 	struct Properties
 	{
-		float translation[3]{};
-		float rotation[3]{};
-		float scale[3]{ 1.f, 1.f, 1.f };
+		glm::vec3 translation{};
+		glm::vec3 rotation{};
+		glm::vec3 scale = glm::vec3(1.f);
 		std::string albedoPath;
 		std::string normalPath;
 		std::string roughnessPath;
@@ -132,12 +139,18 @@ protected:
 
 	int currentModelId = 0;
 
-	std::vector<Model*> models;
+	std::vector<Model*> m_Models;
 	ID3D11Buffer* g_pCBMatrixes = nullptr;
 	ID3D11Buffer* g_pCBLight = nullptr;
 	ID3D11Buffer* g_pCBMaterial = nullptr;
+	ID3D11Buffer* g_pCBSkeletalAnimation = nullptr;
+
 	ID3D11SamplerState* g_pSamplerLinear = nullptr;
 	std::shared_ptr<DX11VertexShader> m_DefaultVertexShader = nullptr;
+
+	std::shared_ptr<DX11VertexShader> m_NullVertexShader = nullptr;
+	std::shared_ptr<DX11PixelShader> m_NullPixelShader = nullptr;
+	std::shared_ptr<DX11GeometryShader> m_NullGeometryShader = nullptr;
 
 	// shadow mapping
 	std::shared_ptr<DX11VertexShader> m_SpotLightDepthVertexShader = nullptr;
@@ -189,7 +202,7 @@ protected:
 
 	std::shared_ptr<DX11PixelShader> m_CubePixelShader;
 
-	void RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, std::shared_ptr<DX11VertexShader>& vertexShader, std::shared_ptr<DX11PixelShader>& pixelShader, bool voxelizing, const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, bool frustumCulling);
+	void RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, std::shared_ptr<DX11VertexShader>& vertexShader, std::shared_ptr<DX11PixelShader>& pixelShader, std::shared_ptr<DX11GeometryShader>& geometryShader, bool voxelizing, const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, bool frustumCulling);
 
 	void PreparePointLightViewMatrixes(glm::vec3 lightPos);
 
@@ -306,8 +319,6 @@ protected:
 	int m_MeshesDrawn = 0;
 
 	// NVIDIA PhysX
-	
-
 	PxDefaultAllocator		gAllocator;
 	PxDefaultErrorCallback	gErrorCallback;
 	PxFoundation* gFoundation = NULL;
@@ -321,7 +332,7 @@ protected:
 
 	void initPhysics(bool interactive);
 	void stepPhysics(float elapsedTime);
-	void cleanupPhysics(bool interactive);
+	void cleanupPhysics();
 	void renderPhysics(float deltaTime);
 	PxRigidDynamic* createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& velocity = PxVec3(0));
 	void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
@@ -342,5 +353,68 @@ protected:
 	void RenderModelBounds(int modelIndex); 
 
 	float m_boxHalfExtent = 0.25f;
+
+	// fmod
+	FMOD::System* m_FmodSystem = nullptr;
+	FMOD::Sound* m_WhooshSound = nullptr;
+	FMOD::Sound* m_BoxDrop1 = nullptr;
+	FMOD::Sound* m_BoxDrop2 = nullptr;
+	FMOD::Sound* m_BoxDrop3 = nullptr;
+	FMOD::Sound* m_BoxDrop4 = nullptr;
+	void FMODInit();
+	void FMODUpdate();
+	void FMODCleanup();
+
+	class PhysXEventCallback : PxSimulationEventCallback
+	{
+	public:
+		void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count) override;
+		void onWake(PxActor** actors, PxU32 count) override;
+		void onSleep(PxActor** actors, PxU32 count) override;
+		void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) override;
+		void onTrigger(PxTriggerPair* pairs, PxU32 count) override;
+		void onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count) override;
+		PhysXEventCallback(TestApplication* app) : m_App(app) {}
+	private:
+		TestApplication* m_App;
+	};
+
+	class PhysXFilterCallback : PxSimulationFilterCallback
+	{
+		// Унаследовано через PxSimulationFilterCallback
+		PxFilterFlags pairFound(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1, PxPairFlags& pairFlags) override;
+		void pairLost(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, bool objectRemoved) override;
+		bool statusChange(PxU64& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags) override;
+	};
+
+	PhysXEventCallback* m_physXEventCallback = nullptr;
+	PhysXFilterCallback* m_physXFilterCallback = nullptr;
+
+	Model* m_AnimatedModel = nullptr;
+	Animator* m_Animator = nullptr;
+	Animation* m_RunAnimation = nullptr;
+	Animation* m_IdleAnimation = nullptr;
+
+	float m_IdleRunBlendFactor = 0.f;
+
+	void FollowCharacter(glm::mat4& viewMatrix);
+	float Xoffset = 0.f, Yoffset = 0.f;
+	bool mouseMoving = false;
+
+	struct PlayerTransform
+	{
+		glm::quat rotation;
+		glm::vec3 position;
+	} transform;
+
+	bool bWalking = true;
+	bool bPrevWalking = true;
+
+	glm::mat4 m_FollowCharacterViewMatrix = glm::mat4(1.f);
+	glm::vec3 m_FollowCharacterCameraPos = glm::vec3(1.f);
+
+	PxRigidDynamic* m_CharacterCapsuleCollider = nullptr;
+
+	std::unique_ptr<DirectX::GamePad> m_GamePad;
 };
 

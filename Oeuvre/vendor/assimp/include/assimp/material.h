@@ -292,14 +292,6 @@ enum aiTextureType {
     aiTextureType_DIFFUSE_ROUGHNESS = 16,
     aiTextureType_AMBIENT_OCCLUSION = 17,
 
-    /** Unknown texture
-     *
-     *  A texture reference that does not match any of the definitions
-     *  above is considered to be 'unknown'. It is still imported,
-     *  but is excluded from any further post-processing.
-    */
-    aiTextureType_UNKNOWN = 18,
-
     /** PBR Material Modifiers
     * Some modern renderers have further PBR modifiers that may be overlaid
     * on top of the 'base' PBR materials for additional realism.
@@ -326,20 +318,20 @@ enum aiTextureType {
     */
     aiTextureType_TRANSMISSION = 21,
 
-    /**
-     * Maya material declarations
-     */
-    aiTextureType_MAYA_BASE = 22,
-    aiTextureType_MAYA_SPECULAR = 23,
-    aiTextureType_MAYA_SPECULAR_COLOR = 24,
-    aiTextureType_MAYA_SPECULAR_ROUGHNESS = 25,
+    /** Unknown texture
+     *
+     *  A texture reference that does not match any of the definitions
+     *  above is considered to be 'unknown'. It is still imported,
+     *  but is excluded from any further post-processing.
+    */
+    aiTextureType_UNKNOWN = 18,
 
 #ifndef SWIG
     _aiTextureType_Force32Bit = INT_MAX
 #endif
 };
 
-#define AI_TEXTURE_TYPE_MAX aiTextureType_MAYA_SPECULAR_ROUGHNESS
+#define AI_TEXTURE_TYPE_MAX aiTextureType_TRANSMISSION
 
 // -------------------------------------------------------------------------------
 /**
@@ -701,7 +693,7 @@ struct aiMaterialProperty {
 *  Material data is stored using a key-value structure. A single key-value
 *  pair is called a 'material property'. C++ users should use the provided
 *  member functions of aiMaterial to process material properties, C users
-*  have to stick with the aiGetMaterialXXX family of unbound functions.
+*  have to stick with the aiMaterialGetXXX family of unbound functions.
 *  The library defines a set of standard keys (AI_MATKEY_XXX).
 */
 #ifdef __cplusplus
@@ -1557,12 +1549,12 @@ ASSIMP_API C_ENUM aiReturn aiGetMaterialFloatArray(
 * @return Specifies whether the key has been found. If not, the output
 *   float remains unmodified.*/
 // ---------------------------------------------------------------------------
-static inline aiReturn aiGetMaterialFloat(const C_STRUCT aiMaterial *pMat,
+inline aiReturn aiGetMaterialFloat(const C_STRUCT aiMaterial *pMat,
         const char *pKey,
         unsigned int type,
         unsigned int index,
         ai_real *pOut) {
-    return aiGetMaterialFloatArray(pMat, pKey, type, index, pOut, NULL);
+    return aiGetMaterialFloatArray(pMat, pKey, type, index, pOut, (unsigned int *)0x0);
 }
 
 // ---------------------------------------------------------------------------
@@ -1582,12 +1574,12 @@ ASSIMP_API C_ENUM aiReturn aiGetMaterialIntegerArray(const C_STRUCT aiMaterial *
  *
  * See the sample for aiGetMaterialFloat for more information.*/
 // ---------------------------------------------------------------------------
-static inline aiReturn aiGetMaterialInteger(const C_STRUCT aiMaterial *pMat,
+inline aiReturn aiGetMaterialInteger(const C_STRUCT aiMaterial *pMat,
         const char *pKey,
         unsigned int type,
         unsigned int index,
         int *pOut) {
-    return aiGetMaterialIntegerArray(pMat, pKey, type, index, pOut, NULL);
+    return aiGetMaterialIntegerArray(pMat, pKey, type, index, pOut, (unsigned int *)0x0);
 }
 
 // ---------------------------------------------------------------------------

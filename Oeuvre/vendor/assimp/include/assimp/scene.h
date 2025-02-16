@@ -401,9 +401,8 @@ struct ASSIMP_API aiScene {
     //! Returns a short filename from a full path
     static const char* GetShortFilename(const char* filename) {
         const char* lastSlash = strrchr(filename, '/');
-        const char* lastBackSlash = strrchr(filename, '\\');
-        if (lastSlash < lastBackSlash) {
-            lastSlash = lastBackSlash;
+        if (lastSlash == nullptr) {
+            lastSlash = strrchr(filename, '\\');
         }
         const char* shortFilename = lastSlash != nullptr ? lastSlash + 1 : filename;
         return shortFilename;

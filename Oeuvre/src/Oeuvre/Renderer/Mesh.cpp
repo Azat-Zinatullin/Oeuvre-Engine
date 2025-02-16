@@ -125,12 +125,8 @@ namespace Oeuvre
 		std::cout << "mesh destructor worked\n";
 	}
 
-	void Mesh::Draw(const std::shared_ptr<Shader>& vertexShader, const std::shared_ptr<Shader>& pixelShader, bool applyTextures)
+	void Oeuvre::Mesh::Draw(bool applyTextures)
 	{
-		if (vertexShader.get())
-			vertexShader->Bind();
-		if (pixelShader.get())
-			pixelShader->Bind();
 		if (applyTextures)
 		{
 			if (m_pTextureAlbedo.get())

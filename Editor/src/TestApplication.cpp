@@ -33,7 +33,83 @@
 #include <Platform/DirectX11/DX11Texture2D.h>
 #include "Oeuvre/Renderer/Frustum.h"
 
+#include <random>
+
 #define CHECK_STATUS(status) if (status != 0) std::cout << "Something went wrong. Status: " << status << '\n';
+
+physx::PxFilterFlags CollisionFilterShader(
+	physx::PxFilterObjectAttributes attributes0, physx::PxFilterData filterData0,
+	physx::PxFilterObjectAttributes attributes1, physx::PxFilterData filterData1,
+	physx::PxPairFlags& pairFlags, const void* /*constantBlock*/, PxU32 /*constantBlockSize*/)
+{
+	// let triggers through
+	if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+	{
+		pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+		return PxFilterFlag::eDEFAULT;
+	}
+	// generate contacts for all that were not filtered above
+	pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+	// trigger the contact callback for pairs (A,B) where
+	// the filtermask of A contains the ID of B and vice versa.
+	if ((filterData0.word0 & filterData1.word1) && (filterData1.word0 & filterData0.word1))
+		pairFlags |= PxPairFlag::eNOTIFY_TOUCH_FOUND;
+
+	return PxFilterFlag::eDEFAULT;
+}
+
+struct FilterGroup
+{
+	enum Enum
+	{
+		eFLOOR = (1 << 0),
+		eOBJECT1 = (1 << 1),
+		eOBJECT2 = (1 << 2),
+		eHEIGHTFIELD = (1 << 3),
+	};
+};
+
+void setupFiltering(PxShape* shape, PxU32 filterGroup, PxU32 filterMask)
+{
+	PxFilterData filterData;
+	filterData.word0 = filterGroup; // word0 = own ID
+	filterData.word1 = filterMask;  // word1 = ID mask to filter pairs that trigger a contact callback
+	shape->setSimulationFilterData(filterData);
+}
+
+
+glm::quat rotateTowards(const glm::quat& from, const glm::quat& to, float maxAngleDegrees)
+{
+	glm::vec3 fromDirection = glm::normalize(from * glm::vec3(0.f, 0.f, 1.f));
+	glm::vec3 toDirection = glm::normalize(to * glm::vec3(0.f, 0.f, 1.f));
+
+	float angleRadians = glm::acos(glm::dot(fromDirection, toDirection));
+
+	if (glm::degrees(angleRadians) < 90.f)
+	{
+		maxAngleDegrees /= 3.f;
+	}
+
+	if (glm::degrees(angleRadians) < 0.f || glm::degrees(angleRadians) >= 360.f)
+		angleRadians = glm::radians(0.f);
+
+	float angleDegrees = std::min(glm::degrees(angleRadians), maxAngleDegrees);
+
+	glm::vec3 axis = glm::cross(fromDirection, toDirection);
+
+	glm::quat rotationIncrement = glm::angleAxis(glm::radians(angleDegrees), axis);
+
+	glm::vec3 result = rotationIncrement * fromDirection;
+
+	float angle = atan2f(result.x, result.z); // Note: I expected atan2(z,x) but OP reported success with atan2(x,z) instead! Switch around if you see 90° off.
+	float qx = 0;
+	float qy = 1 * sin(angle / 2);
+	float qz = 0;
+	float qw = cos(angle / 2);
+	return glm::quat(qw, qx, qy, qz);
+}
+
 
 TestApplication::TestApplication()
 {
@@ -58,7 +134,7 @@ std::unique_ptr<TestApplication> TestApplication::Create()
 	return std::make_unique<TestApplication>();
 }
 
-struct __declspec(align(16)) ConstantBuffer
+struct __declspec(align(16)) MatricesCB
 {
 	glm::mat4 modelMat;
 	glm::mat4  viewMat;
@@ -89,6 +165,11 @@ struct __declspec(align(16)) MaterialCB
 	int renderLightCube;
 };
 
+struct __declspec(align(16)) SkeletalAnimationCB
+{
+	glm::mat4 finalBonesMatrices[MAX_BONES];
+};
+
 bool TestApplication::Init()
 {
 	m_DX11Device = ((DX11RendererAPI*)RendererAPI::GetInstance().get())->GetDevice();
@@ -102,9 +183,18 @@ bool TestApplication::Init()
 
 	std::string prefix = "../resources/colt_python/";
 	Model* model = new Model(prefix + "source/revolver_game.fbx", prefix + "textures/M_WP_Revolver_albedo.jpg", prefix + "textures/M_WP_Revolver_normal.png", prefix + "textures/M_WP_Revolver_roughness.jpg", prefix + "textures/M_WP_Revolver_metallic.jpg");
-	models.emplace_back(model);
-	models.emplace_back(new Model("..\\resources\\sponza\\glTF\\Sponza.gltf", "", "", "", ""));
+	m_Models.emplace_back(model);
+	m_Models.emplace_back(new Model("..\\resources\\sponza\\glTF\\Sponza.gltf", "", "", "", ""));
 	//models.emplace_back(new Model("E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\Bistro_v5_2\\BistroInterior.fbx", "", "", "", ""));
+
+	m_AnimatedModel = new Model("../resources/mixamo/Walking_fixed.fbx", "../resources/mixamo/eve/SpacePirate_M_diffuse.png", "../resources/mixamo/eve/SpacePirate_M_normal.png", "", "");
+	m_Models.emplace_back(m_AnimatedModel);
+	props.emplace_back(Properties());
+
+	m_RunAnimation = new Animation("../resources/mixamo/Running_fixed.fbx", m_AnimatedModel);
+	m_IdleAnimation = new Animation("../resources/mixamo/Pistol_Idle_fixed.fbx", m_AnimatedModel);
+
+	m_Animator = new Animator(m_IdleAnimation);
 
 	// Send all reports to STDOUT
 	//_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
@@ -117,13 +207,15 @@ bool TestApplication::Init()
 
 	props.emplace_back(Properties());
 	props.emplace_back(Properties());
+
 	props[0].scale[0] = props[0].scale[1] = props[0].scale[2] = 5.f;
 	props[0].translation[1] = props[0].translation[0] = 2.5f;
 	props[0].rotation[0] = -90.f;
 	props[1].scale[0] = props[1].scale[1] = props[1].scale[2] = SPONZA_SCALE;
 	props[1].rotation[1] = 90.f;
-	models[1]->GetUseCombinedTextures() = false;
+	m_Models[1]->GetUseCombinedTextures() = false;
 
+	props[2].scale[0] = props[2].scale[1] = props[2].scale[2] = 0.015f;
 
 	// for sponza
 	lightProps.lightPos[0] = { 0.f, 21.f, 0.f };
@@ -153,7 +245,7 @@ bool TestApplication::Init()
 	D3D11_BUFFER_DESC bd;
 	ZeroMemory(&bd, sizeof(bd));
 	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(ConstantBuffer);
+	bd.ByteWidth = sizeof(MatricesCB);
 	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	bd.CPUAccessFlags = 0;
 	HRESULT hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMatrixes);
@@ -166,6 +258,10 @@ bool TestApplication::Init()
 	bd.ByteWidth = sizeof(MaterialCB);
 	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMaterial);
 	if (FAILED(hr)) std::cout << "Can't create g_pCBMaterial\n";
+
+	bd.ByteWidth = sizeof(SkeletalAnimationCB);
+	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBSkeletalAnimation);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBSkeletalAnimation\n";
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -190,7 +286,17 @@ bool TestApplication::Init()
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
 
-	m_DefaultVertexShader = std::make_shared<DX11VertexShader>("src/DefaultVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	D3D11_INPUT_ELEMENT_DESC skeletalAnimationInputLayout[] =
+	{
+		{"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BONEIDS", 0, DXGI_FORMAT_R32G32B32A32_SINT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BONEWEIGHTS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+	};
+
+
+	m_DefaultVertexShader = std::make_shared<DX11VertexShader>("src/DefaultVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
 
 	m_SpotLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/SpotLightDepthVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
 	//m_SpotLightDepthPixelShader = std::make_shared<DX11PixelShader>("src/SpotLightDepthPixelShader.hlsl");
@@ -198,19 +304,21 @@ bool TestApplication::Init()
 	m_SpotLightVertexShader = std::make_shared<DX11VertexShader>("src/SpotLightVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
 	m_SpotLightPixelShader = std::make_shared<DX11PixelShader>("src/SpotLightPixelShader.hlsl");
 
-	m_PointLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/PointLightDepthVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	m_PointLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/PointLightDepthVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
 	m_PointLightDepthPixelShader = std::make_shared<DX11PixelShader>("src/PointLightDepthPixelShader.hlsl");
 	m_PointLightDepthGeometryShader = std::make_shared<DX11GeometryShader>("src/PointLightDepthGeometryShader.hlsl");
 
 	m_CubePixelShader = std::make_shared<DX11PixelShader>("src/CubePixelShader.hlsl");
 
-	m_DeferredVertexShader = std::make_shared<DX11VertexShader>("src/DeferredVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	m_DeferredVertexShader = std::make_shared<DX11VertexShader>("src/DeferredVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
 	m_DeferredPixelShader = std::make_shared<DX11PixelShader>("src/DeferredPixelShader.hlsl");
 
 	m_DeferredCompositingVertexShader = std::make_shared<DX11VertexShader>("src/DeferredCompositingVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
 	m_DeferredCompositingPixelShader = std::make_shared<DX11PixelShader>("src/DeferredCompositingPixelShader.hlsl");
 
 	m_VoxelizationPixelShader = std::make_shared<DX11PixelShader>("src/VoxelizationPixelShader.hlsl");
+
+
 
 	SpotLightDepthToTextureInit();
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
@@ -267,14 +375,14 @@ bool TestApplication::Init()
 
 	hr = m_DX11Device->CreateDepthStencilState(&depthStencilDesc, &m_pGBufferReverseZDepthStencilState);
 
-	cameras.emplace_back(Camera()); // main camera 
+	m_Cameras.emplace_back(Camera()); // main camera 
 	// light cameras and prev positions
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
-		cameras.emplace_back(Camera());
+		m_Cameras.emplace_back(Camera());
 		lightPositionsPrev.emplace_back(glm::vec3(0.f));
 	}
-	cameras.emplace_back(Camera()); // for spotlight
+	m_Cameras.emplace_back(Camera()); // for spotlight
 
 
 	gBuffer = new DX11GBuffer();
@@ -286,7 +394,7 @@ bool TestApplication::Init()
 
 	initPhysics(true);
 
-	auto coltBounds = models[0]->GetBounds();
+	auto coltBounds = m_Models[0]->GetBounds();
 	std::cout << "Colt Python bounds: (" <<
 		coltBounds.lower.x << ", " << coltBounds.lower.y << ", " << coltBounds.lower.z
 		<< " | " << coltBounds.upper.x << ", " << coltBounds.upper.y << ", " << coltBounds.upper.z << ")\n";
@@ -296,6 +404,10 @@ bool TestApplication::Init()
 	m_BoxNormal = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_nor_dx_4k.png");
 	m_BoxRoughness = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_rough_4k.png");
 
+	FMODInit();
+
+	m_GamePad = std::make_unique<GamePad>();
+
 	return true;
 }
 
@@ -304,23 +416,79 @@ void TestApplication::RenderLoop()
 	while (m_Running)
 	{
 		float currentFrame = static_cast<float>(glfwGetTime());
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+		m_DeltaTime = currentFrame - m_LastFrame;
+		m_LastFrame = currentFrame;
+
+		FMODUpdate();
 
 		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
-			cameras[SelectedCamera].ProcessKeyboard(CameraMovement::FORWARD, deltaTime);
+			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::FORWARD, m_DeltaTime);
 		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
-			cameras[SelectedCamera].ProcessKeyboard(CameraMovement::BACKWARD, deltaTime);
+			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::BACKWARD, m_DeltaTime);
 		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
-			cameras[SelectedCamera].ProcessKeyboard(CameraMovement::LEFT, deltaTime);
+			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::LEFT, m_DeltaTime);
 		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
-			cameras[SelectedCamera].ProcessKeyboard(CameraMovement::RIGHT, deltaTime);
+			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::RIGHT, m_DeltaTime);
 
 		if (viewPortActive)
 			glfwSetInputMode(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		else
 			glfwSetInputMode(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
+		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed)
+		{
+			auto glmPos = m_Cameras[0].GetPosition();
+			auto glmDir = m_Cameras[0].GetFrontVector();
+
+			PxTransform t;
+			t.p = PxVec3(glmPos.x, glmPos.y, glmPos.z);
+			t.q = PxQuat(PxIDENTITY::PxIdentity);
+
+			createDynamic(t, PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), PxVec3(glmDir.x, glmDir.y, glmDir.z) * 30);
+
+			FMOD::Channel* channel;
+			m_FmodSystem->playSound(m_WhooshSound, nullptr, false, &channel);
+
+			spacePressed = true;
+		}
+		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_RELEASE)
+			spacePressed = false;
+
+		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_V) == GLFW_PRESS)
+		{
+			m_coltPhysicsActor->addTorque(PxVec3(300.f, 500.f, 0.f));
+		}
+
+		if (m_Animator)			
+		{
+			//m_Animator->UpdateAnimation(m_DeltaTime);
+			//
+			//if (!bWalking && bPrevWalking)
+			//{
+			//	m_Animator->PlayAnimation(m_IdleAnimation);
+			//}
+			//else if (bWalking && !bPrevWalking)
+			//{
+			//	m_Animator->PlayAnimation(m_RunAnimation);
+			//}
+			if (!bWalking)
+			{
+				if (m_IdleRunBlendFactor > 0.f)
+					m_IdleRunBlendFactor -= m_DeltaTime * 8.f;
+				if (m_IdleRunBlendFactor < 0.f)
+					m_IdleRunBlendFactor = 0.f;
+			}
+			else if (bWalking)
+			{
+				if (m_IdleRunBlendFactor < 1.f)
+					m_IdleRunBlendFactor += m_DeltaTime * 8.f;
+				if (m_IdleRunBlendFactor > 1.f)
+					m_IdleRunBlendFactor = 1.f;	
+			}
+			m_Animator->BlendTwoAnimations(m_IdleAnimation, m_RunAnimation, m_IdleRunBlendFactor, m_DeltaTime); // 30.0f intentional here, otherwise they play too slowly
+		}
+			
+		FollowCharacter(m_FollowCharacterViewMatrix);
 		//for (int i = 0; i < 48; i++)
 		//{
 		//	props[2 + i].rotation[2] += glfwGetTime() * deltaTime * 5.f;
@@ -339,28 +507,28 @@ void TestApplication::RenderLoop()
 		if (ImGui::Combo("Camera", &SelectedCamera, items, 5))
 		{
 		}
-		ImGui::SliderFloat("Cam Speed", &cameras[SelectedCamera].GetMovementSpeed(), 1.f, 150.f);
-		ImGui::SliderFloat3("Tr", props[currentModelId].translation, -10.f, 10.f);
-		ImGui::SliderFloat3("Rt", props[currentModelId].rotation, -180.f, 180.f);
-		ImGui::SliderFloat3("Sc", props[currentModelId].scale, 0.f, 5.f);
+		ImGui::SliderFloat("Cam Speed", &m_Cameras[SelectedCamera].GetMovementSpeed(), 1.f, 150.f);
+		ImGui::SliderFloat3("Tr", (float*) &props[currentModelId].translation, -10.f, 10.f);
+		ImGui::SliderFloat3("Rt", (float*) &props[currentModelId].rotation, -180.f, 180.f);
+		ImGui::SliderFloat3("Sc", (float*) &props[currentModelId].scale, 0.f, 5.f);
 		if (ImGui::Button("Change Mesh"))
 		{
 			openFile(modelPath);
 			if (!modelPath.empty())
 			{
-				delete models[currentModelId];
-				models[currentModelId] = new Model(modelPath, "", "", "", "");
+				delete m_Models[currentModelId];
+				m_Models[currentModelId] = new Model(modelPath, "", "", "", "");
 				modelPath = "";
 			}
 		}
 		ImGui::Text("Textures");
-		ImGui::Checkbox("Combined", &models[currentModelId]->GetUseCombinedTextures());
+		ImGui::Checkbox("Combined", &m_Models[currentModelId]->GetUseCombinedTextures());
 		if (ImGui::Button("A"))
 		{
 			openFile(props[currentModelId].albedoPath);
 			if (!props[currentModelId].albedoPath.empty())
 			{
-				models[currentModelId]->ChangeTexture(props[currentModelId].albedoPath, TextureType::ALBEDO);
+				m_Models[currentModelId]->ChangeTexture(props[currentModelId].albedoPath, TextureType::ALBEDO);
 			}
 		}
 		ImGui::SameLine();
@@ -370,7 +538,7 @@ void TestApplication::RenderLoop()
 			openFile(props[currentModelId].normalPath);
 			if (!props[currentModelId].normalPath.empty())
 			{
-				models[currentModelId]->ChangeTexture(props[currentModelId].normalPath, TextureType::NORMAL);
+				m_Models[currentModelId]->ChangeTexture(props[currentModelId].normalPath, TextureType::NORMAL);
 			}
 		}
 		ImGui::SameLine();
@@ -380,7 +548,7 @@ void TestApplication::RenderLoop()
 			openFile(props[currentModelId].roughnessPath);
 			if (!props[currentModelId].roughnessPath.empty())
 			{
-				models[currentModelId]->ChangeTexture(props[currentModelId].roughnessPath, TextureType::ROUGHNESS);
+				m_Models[currentModelId]->ChangeTexture(props[currentModelId].roughnessPath, TextureType::ROUGHNESS);
 			}
 		}
 		ImGui::SameLine();
@@ -390,7 +558,7 @@ void TestApplication::RenderLoop()
 			openFile(props[currentModelId].metallicPath);
 			if (!props[currentModelId].metallicPath.empty())
 			{
-				models[currentModelId]->ChangeTexture(props[currentModelId].metallicPath, TextureType::METALLIC);
+				m_Models[currentModelId]->ChangeTexture(props[currentModelId].metallicPath, TextureType::METALLIC);
 			}
 		}
 		ImGui::SameLine();
@@ -427,11 +595,14 @@ void TestApplication::RenderLoop()
 			ImGui::Checkbox("Render debug", &m_bVXGIRenderDebug);
 		ImGui::Checkbox("Enable SSAO", &g_bEnableSSAO);
 
+
+		ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
+
 		ImGui::End();
 
-		cameras[1].GetPosition() = lightProps.lightPos[0];
-		cameras[2].GetPosition() = lightProps.lightPos[1];
-		cameras[3].GetPosition() = lightProps.lightPos[2];
+		m_Cameras[1].GetPosition() = lightProps.lightPos[0];
+		m_Cameras[2].GetPosition() = lightProps.lightPos[1];
+		m_Cameras[3].GetPosition() = lightProps.lightPos[2];
 
 
 		ImGui::Begin("Scene");
@@ -440,13 +611,13 @@ void TestApplication::RenderLoop()
 			openFile(modelPath);
 			if (!modelPath.empty())
 			{
-				models.emplace_back(new Model(modelPath, "", "", "", ""));
+				m_Models.emplace_back(new Model(modelPath, "", "", "", ""));
 				props.emplace_back(Properties());
 				modelPath = "";
 			}
 		}
 
-		for (int i = 0; i < models.size(); i++)
+		for (int i = 0; i < m_Models.size(); i++)
 		{
 			char nodeName[16];
 			snprintf(nodeName, 16, "Model_%d", i);
@@ -456,8 +627,8 @@ void TestApplication::RenderLoop()
 			{
 				if (ImGui::MenuItem("Delete"))
 				{
-					delete models[i];
-					models.erase(models.begin() + i);
+					delete m_Models[i];
+					m_Models.erase(m_Models.begin() + i);
 					props.erase(props.begin() + i);
 					if (currentModelId == i)
 						currentModelId = 0;
@@ -503,32 +674,11 @@ void TestApplication::RenderLoop()
 		ImGui::Image((ImTextureID)(intptr_t)frameSRV, ImVec2(texWidth, texHeight));
 		ImGui::End();
 
-		m_Renderer->BeginScene();		
+		m_Renderer->BeginScene();
 
 		//props[0].translation[0] = shapePos.x * 0.05f;
 		//props[0].translation[1] = shapePos.y * 0.05f;
-		//props[0].translation[2] = shapePos.z * 0.05f;
-		
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed)
-		{
-			auto glmPos = cameras[0].GetPosition();
-			auto glmDir = cameras[0].GetFrontVector();
-
-			PxTransform t;
-			t.p = PxVec3(glmPos.x, glmPos.y, glmPos.z);
-			t.q = PxQuat(PxIDENTITY::PxIdentity);
-				
-			createDynamic(t, PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), PxVec3(glmDir.x, glmDir.y, glmDir.z) * 30);
-			spacePressed = true;
-		}
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_RELEASE)
-			spacePressed = false;
-
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_V) == GLFW_PRESS)
-		{
-			m_coltPhysicsActor->addTorque(PxVec3(300.f, 500.f, 0.f));
-		}
-			
+		//props[0].translation[2] = shapePos.z * 0.05f;		
 
 		ChangeDepthBiasParameters(depthBias, slopeBias, depthBiasClamp);
 
@@ -536,30 +686,30 @@ void TestApplication::RenderLoop()
 		bool lightPosChanged = false;
 		for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 		{
-			lightPosChanged = lightPositionsPrev[i] != cameras[1 + i].GetPosition();
+			lightPosChanged = lightPositionsPrev[i] != m_Cameras[1 + i].GetPosition();
 			if (lightPosChanged)
 				break;
 		}
-		if (lightPosChanged)
+		if (lightPosChanged || true)
 		{
 			for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 			{
-				PreparePointLightViewMatrixes(cameras[i + 1].GetPosition());
+				PreparePointLightViewMatrixes(m_Cameras[i + 1].GetPosition());
 				//static_cast<DX11RendererAPI*>(RendererAPI::GetInstance().get())->SetCullFront();
 				m_PointLightDepthVertexShader->Bind();
 				m_PointLightDepthGeometryShader->Bind();
 				m_PointLightDepthPixelShader->Bind();
 				PointLightDepthToTextureBegin(i);
-				RenderScene(cameras[0].GetViewMatrix(), lightProjMat, m_PointLightDepthVertexShader, m_PointLightDepthPixelShader, false, nullptr, 0, false);
+				RenderScene(/*m_Cameras[0].GetViewMatrix()*/m_FollowCharacterViewMatrix, lightProjMat, m_PointLightDepthVertexShader, m_PointLightDepthPixelShader, m_PointLightDepthGeometryShader, false, nullptr, 0, false);
 				PointLightDepthToTextureEnd(i);
 				m_PointLightDepthVertexShader->Unbind();
 				m_PointLightDepthGeometryShader->Unbind();
 				m_PointLightDepthPixelShader->Unbind();
 				//static_cast<DX11RendererAPI*>(RendererAPI::GetInstance().get())->SetCullBack();
 			}
-			lightPositionsPrev[0] = cameras[1].GetPosition();
-			lightPositionsPrev[1] = cameras[2].GetPosition();
-			lightPositionsPrev[2] = cameras[3].GetPosition();
+			lightPositionsPrev[0] = m_Cameras[1].GetPosition();
+			lightPositionsPrev[1] = m_Cameras[2].GetPosition();
+			lightPositionsPrev[2] = m_Cameras[3].GetPosition();
 		}
 
 		ResetRenderState();
@@ -568,7 +718,7 @@ void TestApplication::RenderLoop()
 		//m_DX11DeviceContext->OMSetDepthStencilState(m_pGBufferReverseZDepthStencilState, 0); // for reverse z buffer
 		SpotLightDepthToTextureBegin();
 		auto reverseProjMat = reverseZ(spotlightProjMat);
-		RenderScene(cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix(), spotlightProjMat, m_SpotLightDepthVertexShader, m_SpotLightDepthPixelShader, false, nullptr, 0, false);
+		RenderScene(m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix(), spotlightProjMat, m_SpotLightDepthVertexShader, m_SpotLightDepthPixelShader, m_NullGeometryShader, false, nullptr, 0, false);
 		SpotLightDepthToTextureEnd();
 		m_DX11DeviceContext->OMSetDepthStencilState(nullptr, 0);
 
@@ -578,7 +728,6 @@ void TestApplication::RenderLoop()
 		{
 			// Scene voxelization
 			NvidiaVXGIVoxelization();
-			rendererInterface->clearState();
 			ResetRenderState();
 		}
 
@@ -598,15 +747,15 @@ void TestApplication::RenderLoop()
 			for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 			{
 				auto modelMat = glm::mat4(1.f);
-				auto translate = cameras[i + 1].GetPosition();
+				auto translate = m_Cameras[i + 1].GetPosition();
 				auto scale = 0.1f;
 				modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
-				modelMat = glm::scale(modelMat, glm::vec3(scale, scale, scale));			
+				modelMat = glm::scale(modelMat, glm::vec3(scale, scale, scale));
 				RenderCube(modelMat);
-			}		
-			renderPhysics(deltaTime);
+			}
+			renderPhysics(m_DeltaTime);
 			//RenderModelBounds(0);
-		}		
+		}
 		RenderToGBufferEnd();
 
 		//std::cout << "Meshes drawn: " << m_MeshesDrawn << '\n';
@@ -648,7 +797,7 @@ void TestApplication::RenderLoop()
 					// Switching to debug rendering
 					VXGI::DebugRenderParameters params;
 					params.debugMode = VXGI::DebugRenderMode::EMITTANCE_TEXTURE;
-					glm::mat4 viewMatrix = cameras[SelectedCamera].GetViewMatrix();
+					glm::mat4 viewMatrix = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
 					glm::mat4 projMatrix = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 					params.viewMatrix = *(VXGI::float4x4*)&viewMatrix;
 					params.projMatrix = *(VXGI::float4x4*)&projMatrix;
@@ -719,7 +868,7 @@ void TestApplication::ResetRenderState()
 
 void TestApplication::Cleanup()
 {
-	for (auto& model : models)
+	for (auto& model : m_Models)
 		delete model;
 
 	SAFE_RELEASE(frameSRV);
@@ -811,6 +960,10 @@ void TestApplication::Cleanup()
 	SAFE_RELEASE(pQuadVertexBuffer);
 	SAFE_RELEASE(pQuadIndexBuffer);
 
+	cleanupPhysics();
+
+	FMODCleanup();
+
 	ImguiCleanup();
 	m_Renderer->Shutdown();
 	m_Window->OnClose();
@@ -823,8 +976,11 @@ void TestApplication::OnWindowEvent(const Event<WindowEvents>& e)
 		auto windowResizeEvent = e.ToType<WindowResizeEvent>();
 		OV_INFO("Window Resize Event! New Dimensions: {}x{}", windowResizeEvent.width, windowResizeEvent.height);
 
-		m_Window->OnResize(windowResizeEvent.width, windowResizeEvent.height);
-		m_Renderer->OnWindowResize(windowResizeEvent.width, windowResizeEvent.height);
+		if (windowResizeEvent.width > 0 && windowResizeEvent.height > 0)
+		{
+			m_Window->OnResize(windowResizeEvent.width, windowResizeEvent.height);
+			m_Renderer->OnWindowResize(windowResizeEvent.width, windowResizeEvent.height);
+		}
 	}
 	else if (e.GetType() == WindowEvents::WindowClose)
 	{
@@ -859,7 +1015,10 @@ void TestApplication::OnMouseEvent(const Event<MouseEvents>& e)
 
 		if (viewPortActive)
 		{
-			cameras[SelectedCamera].ProcessMouseMovement(xoffset, yoffset);
+			m_Cameras[SelectedCamera].ProcessMouseMovement(xoffset, yoffset);
+			Xoffset = xoffset;
+			Yoffset = yoffset;
+			mouseMoving = true;
 		}
 	}
 	else if (e.GetType() == MouseEvents::MouseButtonDown)
@@ -1219,37 +1378,38 @@ void TestApplication::SaveTextureToFile(ID3D11Texture2D* d3dTexture, const std::
 
 void TestApplication::RenderCubeInit()
 {
+	int boneIds[] = { 101, 101, 101, 101 };
 	Vertex vertices[] =
 	{
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),      glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f)},
+		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f },
+		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),     glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),      glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),      glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)},
+		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),      glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),     glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),      glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f)},
+		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),      glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f)},
+		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),     glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),      glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),		glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),      glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),      glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f)},
+		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
 	};
 
 	D3D11_BUFFER_DESC bd;
@@ -1309,9 +1469,9 @@ void TestApplication::RenderCube(const glm::mat4& modelMat)
 	m_DX11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 
-	ConstantBuffer cb;	
+	MatricesCB cb;
 	cb.modelMat = modelMat;
-	cb.viewMat = cameras[SelectedCamera].GetViewMatrix();
+	cb.viewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
 	cb.projMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 	cb.normalMat = glm::transpose(glm::inverse(modelMat));
 
@@ -1337,7 +1497,7 @@ void TestApplication::RenderQuadInit()
 {
 	Vertex vertices[] =
 	{
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
+		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), },
 		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
 		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
 		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)},
@@ -1383,14 +1543,14 @@ void TestApplication::RenderQuad()
 	m_DX11DeviceContext->IASetIndexBuffer(pQuadIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	m_DX11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	ConstantBuffer cb;
+	MatricesCB cb;
 	cb.modelMat = glm::scale(glm::mat4(1.f), glm::vec3((float)texWidth / texHeight * 1.f, 1.f, 1.f));
 	cb.viewMat = glm::lookAtLH(glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f), glm::vec3(0.f, 1.f, 0.f));
 	//cb.projMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, 0.01f, 100.f);
 	auto projMatXm = XMMatrixOrthographicLH((float)texWidth / texHeight * 2.f, 2.f, 0.1f, 100.f);
 	cb.projMat = *(glm::mat4*)&projMatXm;
 	cb.normalMat = glm::mat4(1.f);
-	glm::mat4 viewProjInv = glm::inverse(cameras[SelectedCamera].GetViewMatrix() * glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, 0.01f, 100.f));
+	glm::mat4 viewProjInv = glm::inverse(m_Cameras[SelectedCamera].GetViewMatrix() * glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, 0.01f, 100.f));
 	cb.viewProjMatInv = viewProjInv;
 
 	m_DX11DeviceContext->UpdateSubresource(g_pCBMatrixes, 0, NULL, &cb, 0, 0);
@@ -1398,21 +1558,21 @@ void TestApplication::RenderQuad()
 	m_DX11DeviceContext->PSSetConstantBuffers(0, 1, &g_pCBMatrixes);
 
 	LightCB lightCb;
-	lightCb.lightPos[0] = glm::vec4(cameras[1].GetPosition().x, cameras[1].GetPosition().y, cameras[1].GetPosition().z, 1.f);
-	lightCb.lightPos[1] = glm::vec4(cameras[2].GetPosition().x, cameras[2].GetPosition().y, cameras[2].GetPosition().z, 1.f);
-	lightCb.lightPos[2] = glm::vec4(cameras[3].GetPosition().x, cameras[3].GetPosition().y, cameras[3].GetPosition().z, 1.f);
-	lightCb.lightPos[3] = glm::vec4(cameras[4].GetPosition().x, cameras[4].GetPosition().y, cameras[4].GetPosition().z, 1.f);
+	lightCb.lightPos[0] = glm::vec4(m_Cameras[1].GetPosition().x, m_Cameras[1].GetPosition().y, m_Cameras[1].GetPosition().z, 1.f);
+	lightCb.lightPos[1] = glm::vec4(m_Cameras[2].GetPosition().x, m_Cameras[2].GetPosition().y, m_Cameras[2].GetPosition().z, 1.f);
+	lightCb.lightPos[2] = glm::vec4(m_Cameras[3].GetPosition().x, m_Cameras[3].GetPosition().y, m_Cameras[3].GetPosition().z, 1.f);
+	lightCb.lightPos[3] = glm::vec4(m_Cameras[4].GetPosition().x, m_Cameras[4].GetPosition().y, m_Cameras[4].GetPosition().z, 1.f);
 	lightCb.conLinQuad[0] = lightProps.constant;
 	lightCb.conLinQuad[1] = lightProps.linear;
 	lightCb.conLinQuad[2] = lightProps.quadratic;
 	lightCb.lightColor = { lightProps.color[0], lightProps.color[1], lightProps.color[2] };
 	lightCb.bias = m_ShadowMapBias;
-	lightCb.camPos = cameras[SelectedCamera].GetPosition();
+	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
 	lightCb.showDiffuseTexture = m_bShowDiffuseTexture;
 	lightCb.numLights = NUM_POINT_LIGHTS;
 	lightCb.enableGI = m_bEnableGI;
 	lightCb.cubeProj = lightProjMat;
-	lightCb.lightViewProjMat = spotlightProjMat * cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
+	lightCb.lightViewProjMat = spotlightProjMat * m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
 
 
 	m_DX11DeviceContext->UpdateSubresource(g_pCBLight, 0, NULL, &lightCb, 0, 0);
@@ -1669,8 +1829,8 @@ void TestApplication::NvidiaVXGIVoxelization()
 {
 	VXGI::Status::Enum status;
 	VXGI::UpdateVoxelizationParameters uvParams = {};
-	glm::vec3 camPos = cameras[SelectedCamera].GetPosition();
-	glm::vec3 frontVec = cameras[SelectedCamera].GetFrontVector();
+	glm::vec3 camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
+	glm::vec3 frontVec = /*m_Cameras[SelectedCamera].GetFrontVector()*/ props[2].translation - m_FollowCharacterCameraPos;
 	glm::vec3 caVec = camPos + frontVec * g_fVoxelSize * float(g_nMapSize) * 0.25f;
 	uvParams.clipmapAnchor = VXGI::float3(caVec.x, caVec.y, caVec.z);
 
@@ -1720,7 +1880,7 @@ void TestApplication::NvidiaVXGIVoxelization()
 
 		if (VXGI_SUCCEEDED(giObject->getInvalidatedRegions(regions, maxRegions, numRegions)))
 		{
-			RenderScene(voxelizationViewMatrix, voxelizationProjMatrix, m_DefaultVertexShader, nullPixelShader, true, regions, numRegions, false);
+			RenderScene(voxelizationViewMatrix, voxelizationProjMatrix, m_DefaultVertexShader, nullPixelShader, m_NullGeometryShader, true, regions, numRegions, false);
 		}
 
 		rendererInterface->clearState();
@@ -1770,7 +1930,7 @@ void TestApplication::NvidiaVXGIConeTracing()
 	inputBuffers.gbufferViewport = NVRHI::Viewport((float)texWidth, (float)texHeight);
 
 	glm::mat4 gBufferProjMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
-	glm::mat4 gBufferViewMat = cameras[SelectedCamera].GetViewMatrix();
+	glm::mat4 gBufferViewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
 	//memcpy(&inputBuffers.viewMatrix, &gBufferViewMat, sizeof(gBufferViewMat));
 	//memcpy(&inputBuffers.projMatrix, &gBufferProjMat, sizeof(gBufferProjMat));
 	inputBuffers.viewMatrix = *(VXGI::float4x4*)&gBufferViewMat;
@@ -1886,7 +2046,7 @@ void TestApplication::RenderToGBufferBegin()
 
 	auto perspectiveMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 	//auto reverse_z = reverseZ(perspectiveMat);
-	RenderScene(cameras[SelectedCamera].GetViewMatrix(), perspectiveMat, m_DeferredVertexShader, m_DeferredPixelShader, false, nullptr, 0, true);
+	RenderScene(/*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix, perspectiveMat, m_DeferredVertexShader, m_DeferredPixelShader, m_NullGeometryShader, false, nullptr, 0, true);
 }
 
 void TestApplication::RenderToGBufferEnd()
@@ -1903,18 +2063,25 @@ glm::mat4 TestApplication::reverseZ(const glm::mat4& perspeciveMat)
 	return reverseZ * perspeciveMat;
 }
 
-void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, std::shared_ptr<DX11VertexShader>& vertexShader, std::shared_ptr<DX11PixelShader>& pixelShader, bool voxelizing, const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, bool frustumCulling)
+void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, std::shared_ptr<DX11VertexShader>& vertexShader, std::shared_ptr<DX11PixelShader>& pixelShader, std::shared_ptr<DX11GeometryShader>& geometryShader, bool voxelizing, const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, bool frustumCulling)
 {
+	if (vertexShader)
+		vertexShader->Bind();
+	if (pixelShader)
+		pixelShader->Bind();
+	if (geometryShader)
+		geometryShader->Bind();
+
 	LightCB lightCb;
-	lightCb.lightPos[0] = glm::vec4(cameras[1].GetPosition().x, cameras[1].GetPosition().y, cameras[1].GetPosition().z, 1.f);
-	lightCb.lightPos[1] = glm::vec4(cameras[2].GetPosition().x, cameras[2].GetPosition().y, cameras[2].GetPosition().z, 1.f);
-	lightCb.lightPos[2] = glm::vec4(cameras[3].GetPosition().x, cameras[3].GetPosition().y, cameras[3].GetPosition().z, 1.f);
-	lightCb.lightPos[3] = glm::vec4(cameras[4].GetPosition().x, cameras[4].GetPosition().y, cameras[4].GetPosition().z, 1.f);
+	lightCb.lightPos[0] = glm::vec4(m_Cameras[1].GetPosition().x, m_Cameras[1].GetPosition().y, m_Cameras[1].GetPosition().z, 1.f);
+	lightCb.lightPos[1] = glm::vec4(m_Cameras[2].GetPosition().x, m_Cameras[2].GetPosition().y, m_Cameras[2].GetPosition().z, 1.f);
+	lightCb.lightPos[2] = glm::vec4(m_Cameras[3].GetPosition().x, m_Cameras[3].GetPosition().y, m_Cameras[3].GetPosition().z, 1.f);
+	lightCb.lightPos[3] = glm::vec4(m_Cameras[4].GetPosition().x, m_Cameras[4].GetPosition().y, m_Cameras[4].GetPosition().z, 1.f);
 	lightCb.conLinQuad[0] = lightProps.constant;
 	lightCb.conLinQuad[1] = lightProps.linear;
 	lightCb.conLinQuad[2] = lightProps.quadratic;
 	lightCb.lightColor = { lightProps.color[0], lightProps.color[1], lightProps.color[2] };
-	lightCb.lightViewProjMat = spotlightProjMat * cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
+	lightCb.lightViewProjMat = spotlightProjMat * m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
 	lightCb.bias = m_ShadowMapBias;
 	lightCb.numLights = NUM_POINT_LIGHTS;
 	for (int i = 0; i < 6; i++)
@@ -1922,7 +2089,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		lightCb.cubeView[i] = m_PointLightDepthCaptureViews[i];
 	}
 	lightCb.cubeProj = lightProjMat;
-	lightCb.camPos = cameras[SelectedCamera].GetPosition();
+	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
 	lightCb.showDiffuseTexture = m_bShowDiffuseTexture;
 	lightCb.enableGI = m_bEnableGI;
 
@@ -1940,13 +2107,13 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 	}
 
 	m_MeshesDrawn = 0;
-	for (int i = 0; i < models.size(); i++)
+	for (int i = 0; i < m_Models.size(); i++)
 	{
 		auto translate = props[i].translation;
 		auto rotate = props[i].rotation;
 		auto scale = props[i].scale;
 
-		ConstantBuffer cb;
+		MatricesCB cb;
 		auto modelMat = glm::mat4(1.f);
 		modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
 		modelMat = glm::rotate(modelMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
@@ -1961,15 +2128,34 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		cb.normalMat = glm::transpose(glm::inverse(modelMat));
 
 		MaterialCB matCb;
-		if (models[i]->GetFilePath().find("Sponza.gltf") != std::string::npos)
+		if (m_Models[i]->GetFilePath().find("Sponza.gltf") != std::string::npos)
 			matCb.sponza = 1.0f;
 		else
 			matCb.sponza = 0.f;
 		matCb.normalStrength = normalStrength;
 		matCb.renderLightCube = 0;
 
+		SkeletalAnimationCB saCb;
+		if (m_Animator)
+		{
+			auto finalBoneMatrices = m_Animator->GetFinalBoneMatrices();
+			for (int i = 0; i < finalBoneMatrices.size(); i++)
+			{
+				saCb.finalBonesMatrices[i] = finalBoneMatrices[i];			
+			}
+		}
+		else
+		{
+			for (int i = 0; i < 100; i++)
+			{
+				saCb.finalBonesMatrices[i] = glm::mat4(1.f);
+			}
+		}
+
+
 		m_DX11DeviceContext->UpdateSubresource(g_pCBMatrixes, 0, NULL, &cb, 0, 0);
 		m_DX11DeviceContext->UpdateSubresource(g_pCBMaterial, 0, NULL, &matCb, 0, 0);
+		m_DX11DeviceContext->UpdateSubresource(g_pCBSkeletalAnimation, 0, NULL, &saCb, 0, 0);
 
 		m_DX11DeviceContext->VSSetConstantBuffers(0, 1, &g_pCBMatrixes);
 		if (!voxelizing)
@@ -1978,6 +2164,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 			m_DX11DeviceContext->VSSetConstantBuffers(2, 1, &g_pCBMaterial);
 			m_DX11DeviceContext->PSSetConstantBuffers(2, 1, &g_pCBMaterial);
 		}
+		m_DX11DeviceContext->VSSetConstantBuffers(3, 1, &g_pCBSkeletalAnimation);
 
 		m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
 		if (!voxelizing)
@@ -1993,11 +2180,11 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		{
 			Frustum frustum;
 			frustum.ConstructFrustum(viewMatrix, projMatrix, FAR_PLANE);
-			m_MeshesDrawn += models[i]->Draw(vertexShader, pixelShader, clippingBoxes, numBoxes, modelMat, &frustum);
+			m_MeshesDrawn += m_Models[i]->Draw(clippingBoxes, numBoxes, modelMat, &frustum);
 		}
 		else
 		{
-			models[i]->Draw(vertexShader, pixelShader, clippingBoxes, numBoxes, modelMat, nullptr);
+			m_Models[i]->Draw(clippingBoxes, numBoxes, modelMat, nullptr);
 		}
 	}
 }
@@ -2027,6 +2214,12 @@ void TestApplication::initPhysics(bool interactive)
 	gDispatcher = PxDefaultCpuDispatcherCreate(2);
 	sceneDesc.cpuDispatcher = gDispatcher;
 	sceneDesc.filterShader = PxDefaultSimulationFilterShader;
+	m_physXEventCallback = new PhysXEventCallback(this);
+	//m_physXFilterCallback = new PhysXFilterCallback();
+	sceneDesc.filterShader = CollisionFilterShader;
+	//sceneDesc.filterCallback = (PxSimulationFilterCallback*)m_physXFilterCallback;
+	sceneDesc.simulationEventCallback = (PxSimulationEventCallback*)m_physXEventCallback;
+
 	gScene = gPhysics->createScene(sceneDesc);
 
 	PxPvdSceneClient* pvdClient = gScene->getScenePvdClient();
@@ -2037,10 +2230,8 @@ void TestApplication::initPhysics(bool interactive)
 		pvdClient->setScenePvdFlag(PxPvdSceneFlag::eTRANSMIT_SCENEQUERIES, true);
 	}
 	gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.6f);
-
 	PxRigidStatic* groundPlane = PxCreatePlane(*gPhysics, PxPlane(0, 1, 0, 0), *gMaterial);
 	gScene->addActor(*groundPlane);
-
 
 	for (PxU32 i = 0; i < 5; i++)
 		createStack(PxTransform(PxVec3(0, 0, stackZ -= 5.0f)), 10, m_boxHalfExtent);
@@ -2051,8 +2242,8 @@ void TestApplication::initPhysics(bool interactive)
 	// create pystol actor
 	PxTransform localTm(0, 5.f, 0);
 	m_coltPhysicsActor = gPhysics->createRigidDynamic(localTm);
-	auto coltMeshes = models[0]->GetMeshes();
-	for (Mesh& mesh: coltMeshes)
+	auto coltMeshes = m_Models[0]->GetMeshes();
+	for (Mesh& mesh : coltMeshes)
 	{
 		auto meshBounds = mesh.GetBounds();
 
@@ -2069,20 +2260,27 @@ void TestApplication::initPhysics(bool interactive)
 		{
 			shape->setMaterials(&mMaterial, 1);
 		}
-		
-		m_coltPhysicsActor->attachShape(*shape);		
+
+		m_coltPhysicsActor->attachShape(*shape);
 	}
+
+	m_CharacterCapsuleCollider = gPhysics->createRigidDynamic(localTm);
+	PxShape* feetShape = gPhysics->createShape(PxCapsuleGeometry(0.2f, 1.f), *gMaterial);
+	m_CharacterCapsuleCollider->attachShape(*feetShape);
+	PxRigidBodyExt::updateMassAndInertia(*m_CharacterCapsuleCollider, 300.0f);
+	gScene->addActor(*m_CharacterCapsuleCollider);
+
 	PxRigidBodyExt::updateMassAndInertia(*m_coltPhysicsActor, 10.0f);
 	gScene->addActor(*m_coltPhysicsActor);
 }
 
-void TestApplication::stepPhysics(float elapsedTime /*interactive*/)
+void TestApplication::stepPhysics(float elapsedTime)
 {
-	gScene->simulate(1.f/60.f);
+	gScene->simulate(elapsedTime);
 	gScene->fetchResults(true);
 }
 
-void TestApplication::cleanupPhysics(bool /*interactive*/)
+void TestApplication::cleanupPhysics()
 {
 	PX_RELEASE(gScene);
 	PX_RELEASE(gDispatcher);
@@ -2100,7 +2298,10 @@ void TestApplication::cleanupPhysics(bool /*interactive*/)
 
 void TestApplication::renderPhysics(float deltaTime)
 {
-	stepPhysics(deltaTime);
+	if (deltaTime > 0.f && deltaTime < 0.1f)
+		stepPhysics(deltaTime);
+	else
+		stepPhysics(1.f / 60.f);
 
 	PxScene* scene;
 	PxGetPhysics().getScenes(&scene, 1);
@@ -2140,7 +2341,7 @@ void TestApplication::renderPhysics(float deltaTime)
 				m_BoxNormal->Bind(1);
 				m_BoxRoughness->Bind(2);
 
-				if (actor != m_coltPhysicsActor)
+				if (actor != m_coltPhysicsActor && actor != m_CharacterCapsuleCollider)
 					RenderCube(boxModelMat);
 			}
 		}
@@ -2152,6 +2353,8 @@ void TestApplication::renderPhysics(float deltaTime)
 		//shapePose.scale(PxVec4(5.f));
 		coltMat = *(glm::mat4*)&shapePose;
 		coltMat = glm::scale(coltMat, glm::vec3(10.f));
+
+		m_CharacterCapsuleCollider->setGlobalPose(PxTransform(PxVec3(props[2].translation.x, props[2].translation.y, props[2].translation.z)));
 	}
 }
 
@@ -2167,6 +2370,9 @@ PxRigidDynamic* TestApplication::createDynamic(const PxTransform& t, const PxGeo
 void TestApplication::createStack(const PxTransform& t, PxU32 size, PxReal halfExtent)
 {
 	PxShape* shape = gPhysics->createShape(PxBoxGeometry(halfExtent, halfExtent, halfExtent), *gMaterial);
+
+	setupFiltering(shape, FilterGroup::eOBJECT1, FilterGroup::eFLOOR);
+
 	for (PxU32 i = 0; i < size; i++)
 	{
 		for (PxU32 j = 0; j < size - i; j++)
@@ -2183,7 +2389,7 @@ void TestApplication::createStack(const PxTransform& t, PxU32 size, PxReal halfE
 
 void TestApplication::RenderModelBounds(int modelIndex)
 {
-	auto modelBounds = models[modelIndex]->GetMeshBounds();
+	auto modelBounds = m_Models[modelIndex]->GetMeshBounds();
 	for (auto& bound : modelBounds)
 	{
 		auto width = abs(bound.upper.x - bound.lower.x);
@@ -2207,8 +2413,257 @@ void TestApplication::RenderModelBounds(int modelIndex)
 		if (modelIndex == 0)
 			modelMat = coltMat;
 
-		modelMat = glm::scale(modelMat, glm::vec3(lowerDimension/height / 5.f, lowerDimension/width / 5.f, lowerDimension/depth / 5.f));
+		modelMat = glm::scale(modelMat, glm::vec3(lowerDimension / height / 5.f, lowerDimension / width / 5.f, lowerDimension / depth / 5.f));
 
 		RenderCube(modelMat);
 	}
+}
+
+void TestApplication::FMODInit()
+{
+	FMOD_RESULT result;
+	result = FMOD::System_Create(&m_FmodSystem);      // Create the main system object.
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+	result = m_FmodSystem->init(512, FMOD_INIT_NORMAL, 0);    // Initialize FMOD.
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	result = m_FmodSystem->createSound("../resources/audio/530448__mellau__whoosh-short-5.wav", FMOD_CREATESAMPLE, nullptr, &m_WhooshSound);
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	result = m_FmodSystem->createSound("../resources/audio/Wooden Box Drop_1.wav", FMOD_CREATESAMPLE, nullptr, &m_BoxDrop1);
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	result = m_FmodSystem->createSound("../resources/audio/Wooden Box Drop_2.wav", FMOD_CREATESAMPLE, nullptr, &m_BoxDrop2);
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	result = m_FmodSystem->createSound("../resources/audio/Wooden Box Drop_3.wav", FMOD_CREATESAMPLE, nullptr, &m_BoxDrop3);
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+
+	result = m_FmodSystem->createSound("../resources/audio/Wooden Box Drop_4.wav", FMOD_CREATESAMPLE, nullptr, &m_BoxDrop4);
+	if (result != FMOD_OK)
+	{
+		printf("FMOD error! (%d) %s\n", result, FMOD_ErrorString(result));
+		exit(-1);
+	}
+	m_BoxDrop1->setLoopCount(0);
+	m_BoxDrop2->setLoopCount(0);
+	m_BoxDrop3->setLoopCount(0);
+	m_BoxDrop4->setLoopCount(0);
+}
+
+void TestApplication::FMODUpdate()
+{
+	m_FmodSystem->update();
+}
+
+void TestApplication::FMODCleanup()
+{
+	m_FmodSystem->release();
+}
+
+void TestApplication::FollowCharacter(glm::mat4& viewMatrix)
+{
+	// camera follows model
+	glm::vec3 eye = glm::vec3(0.f, 0.f, 1.f);
+	glm::mat4 eyeMat = glm::mat4(1.f);
+
+	static float yaw = 0.f;
+	static float pitch = 0.f;
+
+	/*auto pad = m_GamePad->GetState(0);
+	if (pad.IsConnected())
+	{
+		if (pad.IsViewPressed())
+		{
+			m_Running = false;
+		}
+
+		if (pad.IsRightStickPressed())
+		{
+			yaw = pitch = 0.f;
+		}
+		else
+		{
+			float ROTATION_GAIN = 4.f;
+			yaw += pad.thumbSticks.rightX * ROTATION_GAIN;
+			pitch -= pad.thumbSticks.rightY * ROTATION_GAIN;
+		}
+	}*/
+	if (mouseMoving)
+	{
+		yaw += Xoffset * m_DeltaTime * 5.f;
+		pitch -= Yoffset * m_DeltaTime * 5.f;
+	}
+	if (pitch >= 60.f)
+		pitch = 60.f;
+	else if (pitch <= -15.f)
+		pitch = -15.f;
+	yaw = fmodf(yaw, 360.f);
+	//std::cout << "Yaw: " << yaw << '\n';
+	//std::cout << "Pitch: " << pitch << '\n';
+
+
+	mouseMoving = false;
+
+	auto quat = glm::quat(glm::vec3(glm::radians(pitch), glm::radians(yaw), 0.f));
+	auto quatYaw = glm::quat(glm::vec3(0.f, glm::radians(yaw), 0.f));
+	auto dir = quat * glm::vec3(0.f, 0.f, -5.f);
+	auto dirYaw = quatYaw * glm::vec3(0.f, 0.f, 5.f);
+	auto up = glm::vec3(0.f, 1.f, 0.f);
+	auto headPos = props[2].translation + glm::vec3(0.f, 1.5f, 0.f);
+	auto eye3 = dir + headPos;
+	eye = eye3;
+
+	m_FollowCharacterCameraPos = glm::vec3(eye);
+	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos, glm::vec3(0.f, 1.f, 0.f));
+
+	//transform.rotation = quatYaw;
+	transform.position = glm::vec3(props[2].translation.x, props[2].translation.y, props[2].translation.z);
+
+	float camSpeed = 5.f;
+	float rotSpeed = 30.f;
+		
+
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
+	{
+		transform.position += glm::normalize(dirYaw) * m_DeltaTime * camSpeed;		
+		transform.rotation = rotateTowards(transform.rotation, quatYaw, rotSpeed);
+		bPrevWalking = bWalking;
+		bWalking = true;
+	}
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_RELEASE)
+	{
+		bPrevWalking = bWalking;
+		bWalking = false;
+	}
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
+	{
+		transform.position -= glm::normalize(dirYaw) * m_DeltaTime * camSpeed;
+		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw + 180.f), 0.f)), rotSpeed);
+		//bPrevWalking = bWalking;
+		bWalking = true;
+	}
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
+	{
+		transform.position += glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;
+		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw - 90.f), 0.f)), rotSpeed);
+		bWalking = true;
+	}
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
+	{
+		transform.position -= glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;
+		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw + 90.f), 0.f)), rotSpeed);
+		bWalking = true;
+	}
+
+	//if (pad.thumbSticks.leftY != 0.f)
+	//{
+	//	transform.position += pad.thumbSticks.leftY * glm::normalize(dirYaw) * m_DeltaTime * camSpeed;
+	//	bWalking = true;
+	//}		
+	//if (pad.thumbSticks.leftX != 0.f)
+	//{
+	//	transform.position += -pad.thumbSticks.leftX * glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;	
+	//	bWalking = true;
+	//}	
+		
+
+	props[2].translation.x = transform.position.x;
+	props[2].translation.y = transform.position.y;
+	props[2].translation.z = transform.position.z;
+
+	auto eulerRotation = glm::eulerAngles(transform.rotation);
+	props[2].rotation.x = glm::degrees(eulerRotation.x);
+	props[2].rotation.y = glm::degrees(eulerRotation.y);
+	props[2].rotation.z = glm::degrees(eulerRotation.z);
+}
+
+void TestApplication::PhysXEventCallback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
+{
+}
+
+void TestApplication::PhysXEventCallback::onWake(PxActor** actors, PxU32 count)
+{
+}
+
+void TestApplication::PhysXEventCallback::onSleep(PxActor** actors, PxU32 count)
+{
+}
+
+void TestApplication::PhysXEventCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
+{
+	for (physx::PxU32 i = 0; i < nbPairs; i++)
+	{
+		const physx::PxContactPair& cp = pairs[i];
+
+		if (cp.events & physx::PxPairFlag::eNOTIFY_TOUCH_FOUND)
+		{
+			std::mt19937 generator(123);
+			std::uniform_int_distribution<int> dis(1, 4);
+
+			int soundIndex = dis(generator);
+			FMOD::Channel* channel;
+			switch (soundIndex)
+			{
+			case 1:
+				m_App->m_FmodSystem->playSound(m_App->m_BoxDrop1, nullptr, false, &channel);
+				break;
+			case 2:
+				m_App->m_FmodSystem->playSound(m_App->m_BoxDrop2, nullptr, false, &channel);
+				break;
+			case 3:
+				m_App->m_FmodSystem->playSound(m_App->m_BoxDrop3, nullptr, false, &channel);
+				break;
+			case 4:
+				m_App->m_FmodSystem->playSound(m_App->m_BoxDrop4, nullptr, false, &channel);
+				break;
+			}
+		}
+	}
+}
+
+void TestApplication::PhysXEventCallback::onTrigger(PxTriggerPair* pairs, PxU32 count)
+{
+}
+
+void TestApplication::PhysXEventCallback::onAdvance(const PxRigidBody* const* bodyBuffer, const PxTransform* poseBuffer, const PxU32 count)
+{
+}
+
+PxFilterFlags TestApplication::PhysXFilterCallback::pairFound(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1, PxPairFlags& pairFlags)
+{
+	return PxFilterFlags();
+}
+
+void TestApplication::PhysXFilterCallback::pairLost(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, bool objectRemoved)
+{
+}
+
+bool TestApplication::PhysXFilterCallback::statusChange(PxU64& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags)
+{
+	return false;
 }

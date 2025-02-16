@@ -13,7 +13,7 @@ struct Output
     float2 uv : TEXCOORD0;
 };
 
-cbuffer ObjectBuffer : register(b0)
+cbuffer MatricesBuffer : register(b0)
 {
     matrix modelMat;
     matrix viewMat;
@@ -26,7 +26,7 @@ cbuffer ObjectBuffer : register(b0)
 
 Output VSMain(Input input)
 {
-    Output output;
+    Output output;   
     output.position = mul(float4(input.position, 1.f), modelMat);
     output.position = mul(output.position, viewMat);
     output.position = mul(output.position, projMat);

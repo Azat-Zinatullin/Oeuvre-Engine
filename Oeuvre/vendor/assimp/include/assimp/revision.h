@@ -6,7 +6,7 @@
 
 #define VER_MAJOR 5
 #define VER_MINOR 4
-#define VER_PATCH 3
+#define VER_PATCH 1
 #define VER_BUILD 0
 
 #define STR_HELP(x) #x
