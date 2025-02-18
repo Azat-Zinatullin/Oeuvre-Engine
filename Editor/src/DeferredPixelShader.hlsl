@@ -59,7 +59,7 @@ Output PSMain(Input input)
     //    input.uv = input.uv / 2.f;
     
     float4 diffuseColor = albedoMap.Sample(textureSampler, input.uv);
-    float3 normal = getNormalFromMap(input.fragPos, input.uv, input.normal);
+    float3 normal = getNormalFromMap(input.fragPos, input.uv, input.normal);   
     float roughness = roughnessMap.Sample(textureSampler, input.uv).r;
     float metallic = metallicMap.Sample(textureSampler, input.uv).r;
     if (sponza)

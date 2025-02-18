@@ -33,6 +33,8 @@
 #include <Platform/DirectX11/DX11Texture2D.h>
 #include "Oeuvre/Renderer/Frustum.h"
 
+#include <limits>
+
 #include <random>
 
 #define CHECK_STATUS(status) if (status != 0) std::cout << "Something went wrong. Status: " << status << '\n';
@@ -77,39 +79,6 @@ void setupFiltering(PxShape* shape, PxU32 filterGroup, PxU32 filterMask)
 	filterData.word1 = filterMask;  // word1 = ID mask to filter pairs that trigger a contact callback
 	shape->setSimulationFilterData(filterData);
 }
-
-
-glm::quat rotateTowards(const glm::quat& from, const glm::quat& to, float maxAngleDegrees)
-{
-	glm::vec3 fromDirection = glm::normalize(from * glm::vec3(0.f, 0.f, 1.f));
-	glm::vec3 toDirection = glm::normalize(to * glm::vec3(0.f, 0.f, 1.f));
-
-	float angleRadians = glm::acos(glm::dot(fromDirection, toDirection));
-
-	if (glm::degrees(angleRadians) < 90.f)
-	{
-		maxAngleDegrees /= 3.f;
-	}
-
-	if (glm::degrees(angleRadians) < 0.f || glm::degrees(angleRadians) >= 360.f)
-		angleRadians = glm::radians(0.f);
-
-	float angleDegrees = std::min(glm::degrees(angleRadians), maxAngleDegrees);
-
-	glm::vec3 axis = glm::cross(fromDirection, toDirection);
-
-	glm::quat rotationIncrement = glm::angleAxis(glm::radians(angleDegrees), axis);
-
-	glm::vec3 result = rotationIncrement * fromDirection;
-
-	float angle = atan2f(result.x, result.z); // Note: I expected atan2(z,x) but OP reported success with atan2(x,z) instead! Switch around if you see 90° off.
-	float qx = 0;
-	float qy = 1 * sin(angle / 2);
-	float qz = 0;
-	float qw = cos(angle / 2);
-	return glm::quat(qw, qx, qy, qz);
-}
-
 
 TestApplication::TestApplication()
 {
@@ -185,6 +154,7 @@ bool TestApplication::Init()
 	Model* model = new Model(prefix + "source/revolver_game.fbx", prefix + "textures/M_WP_Revolver_albedo.jpg", prefix + "textures/M_WP_Revolver_normal.png", prefix + "textures/M_WP_Revolver_roughness.jpg", prefix + "textures/M_WP_Revolver_metallic.jpg");
 	m_Models.emplace_back(model);
 	m_Models.emplace_back(new Model("..\\resources\\sponza\\glTF\\Sponza.gltf", "", "", "", ""));
+	//m_Models.emplace_back(new Model("..\\resources\\sponza-gltf-pbr\\sponza.glb", "", "", "", ""));
 	//models.emplace_back(new Model("E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\Bistro_v5_2\\BistroInterior.fbx", "", "", "", ""));
 
 	m_AnimatedModel = new Model("../resources/mixamo/Walking_fixed.fbx", "../resources/mixamo/eve/SpacePirate_M_diffuse.png", "../resources/mixamo/eve/SpacePirate_M_normal.png", "", "");
@@ -459,36 +429,13 @@ void TestApplication::RenderLoop()
 			m_coltPhysicsActor->addTorque(PxVec3(300.f, 500.f, 0.f));
 		}
 
-		if (m_Animator)			
-		{
-			//m_Animator->UpdateAnimation(m_DeltaTime);
-			//
-			//if (!bWalking && bPrevWalking)
-			//{
-			//	m_Animator->PlayAnimation(m_IdleAnimation);
-			//}
-			//else if (bWalking && !bPrevWalking)
-			//{
-			//	m_Animator->PlayAnimation(m_RunAnimation);
-			//}
-			if (!bWalking)
-			{
-				if (m_IdleRunBlendFactor > 0.f)
-					m_IdleRunBlendFactor -= m_DeltaTime * 8.f;
-				if (m_IdleRunBlendFactor < 0.f)
-					m_IdleRunBlendFactor = 0.f;
-			}
-			else if (bWalking)
-			{
-				if (m_IdleRunBlendFactor < 1.f)
-					m_IdleRunBlendFactor += m_DeltaTime * 8.f;
-				if (m_IdleRunBlendFactor > 1.f)
-					m_IdleRunBlendFactor = 1.f;	
-			}
-			m_Animator->BlendTwoAnimations(m_IdleAnimation, m_RunAnimation, m_IdleRunBlendFactor, m_DeltaTime); // 30.0f intentional here, otherwise they play too slowly
-		}
-			
-		FollowCharacter(m_FollowCharacterViewMatrix);
+		// setting deafult camera properties
+		m_CameraViewMatrix = m_Cameras[SelectedCamera].GetViewMatrix();
+		m_CameraPos = m_Cameras[SelectedCamera].GetPosition();
+		m_CameraFrontVector = m_Cameras[SelectedCamera].GetFrontVector();
+
+		MoveCharacter(m_CameraViewMatrix, m_CameraPos, m_CameraFrontVector);
+
 		//for (int i = 0; i < 48; i++)
 		//{
 		//	props[2 + i].rotation[2] += glfwGetTime() * deltaTime * 5.f;
@@ -508,9 +455,9 @@ void TestApplication::RenderLoop()
 		{
 		}
 		ImGui::SliderFloat("Cam Speed", &m_Cameras[SelectedCamera].GetMovementSpeed(), 1.f, 150.f);
-		ImGui::SliderFloat3("Tr", (float*) &props[currentModelId].translation, -10.f, 10.f);
-		ImGui::SliderFloat3("Rt", (float*) &props[currentModelId].rotation, -180.f, 180.f);
-		ImGui::SliderFloat3("Sc", (float*) &props[currentModelId].scale, 0.f, 5.f);
+		ImGui::SliderFloat3("Tr", (float*)&props[currentModelId].translation, -10.f, 10.f);
+		ImGui::SliderFloat3("Rt", (float*)&props[currentModelId].rotation, -180.f, 180.f);
+		ImGui::SliderFloat3("Sc", (float*)&props[currentModelId].scale, 0.f, 5.f);
 		if (ImGui::Button("Change Mesh"))
 		{
 			openFile(modelPath);
@@ -588,7 +535,7 @@ void TestApplication::RenderLoop()
 		ImGui::SliderFloat("SamplingRate", &g_fSamplingRate, 0.25f, 1.f);
 		ImGui::SliderFloat("Quality", &g_fQuality, 0.001f, 1.f);
 		ImGui::SliderFloat("MultiBounceScale", &g_fMultiBounceScale, 0.001f, 2.f);
-		ImGui::SliderFloat("VXAOScale", &m_fVxaoScale, 0.001f, 5.f);
+		ImGui::SliderFloat("VXAOScale", &m_fVxaoScale, 0.001f, 50.f);
 		ImGui::Text("GI Debug View");
 		ImGui::Checkbox("Show diffuse only", &m_bShowDiffuseTexture);
 		if (m_bShowDiffuseTexture)
@@ -597,6 +544,7 @@ void TestApplication::RenderLoop()
 
 
 		ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
+		ImGui::SliderFloat("CharacterCameraZoom", &m_FollowCharacterCameraZoom, 1.f, 5.f);
 
 		ImGui::End();
 
@@ -700,7 +648,7 @@ void TestApplication::RenderLoop()
 				m_PointLightDepthGeometryShader->Bind();
 				m_PointLightDepthPixelShader->Bind();
 				PointLightDepthToTextureBegin(i);
-				RenderScene(/*m_Cameras[0].GetViewMatrix()*/m_FollowCharacterViewMatrix, lightProjMat, m_PointLightDepthVertexShader, m_PointLightDepthPixelShader, m_PointLightDepthGeometryShader, false, nullptr, 0, false);
+				RenderScene(/*m_Cameras[0].GetViewMatrix()*/m_CameraViewMatrix, lightProjMat, m_PointLightDepthVertexShader, m_PointLightDepthPixelShader, m_PointLightDepthGeometryShader, false, nullptr, 0, false);
 				PointLightDepthToTextureEnd(i);
 				m_PointLightDepthVertexShader->Unbind();
 				m_PointLightDepthGeometryShader->Unbind();
@@ -797,7 +745,7 @@ void TestApplication::RenderLoop()
 					// Switching to debug rendering
 					VXGI::DebugRenderParameters params;
 					params.debugMode = VXGI::DebugRenderMode::EMITTANCE_TEXTURE;
-					glm::mat4 viewMatrix = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
+					glm::mat4 viewMatrix = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_CameraViewMatrix;
 					glm::mat4 projMatrix = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 					params.viewMatrix = *(VXGI::float4x4*)&viewMatrix;
 					params.projMatrix = *(VXGI::float4x4*)&projMatrix;
@@ -1471,7 +1419,7 @@ void TestApplication::RenderCube(const glm::mat4& modelMat)
 
 	MatricesCB cb;
 	cb.modelMat = modelMat;
-	cb.viewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
+	cb.viewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_CameraViewMatrix;
 	cb.projMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 	cb.normalMat = glm::transpose(glm::inverse(modelMat));
 
@@ -1567,7 +1515,7 @@ void TestApplication::RenderQuad()
 	lightCb.conLinQuad[2] = lightProps.quadratic;
 	lightCb.lightColor = { lightProps.color[0], lightProps.color[1], lightProps.color[2] };
 	lightCb.bias = m_ShadowMapBias;
-	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
+	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_CameraPos;
 	lightCb.showDiffuseTexture = m_bShowDiffuseTexture;
 	lightCb.numLights = NUM_POINT_LIGHTS;
 	lightCb.enableGI = m_bEnableGI;
@@ -1829,8 +1777,8 @@ void TestApplication::NvidiaVXGIVoxelization()
 {
 	VXGI::Status::Enum status;
 	VXGI::UpdateVoxelizationParameters uvParams = {};
-	glm::vec3 camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
-	glm::vec3 frontVec = /*m_Cameras[SelectedCamera].GetFrontVector()*/ props[2].translation - m_FollowCharacterCameraPos;
+	glm::vec3 camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_CameraPos;
+	glm::vec3 frontVec = /*m_Cameras[SelectedCamera].GetFrontVector()*/ m_CameraFrontVector;
 	glm::vec3 caVec = camPos + frontVec * g_fVoxelSize * float(g_nMapSize) * 0.25f;
 	uvParams.clipmapAnchor = VXGI::float3(caVec.x, caVec.y, caVec.z);
 
@@ -1930,7 +1878,7 @@ void TestApplication::NvidiaVXGIConeTracing()
 	inputBuffers.gbufferViewport = NVRHI::Viewport((float)texWidth, (float)texHeight);
 
 	glm::mat4 gBufferProjMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
-	glm::mat4 gBufferViewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix;
+	glm::mat4 gBufferViewMat = /*m_Cameras[SelectedCamera].GetViewMatrix()*/m_CameraViewMatrix;
 	//memcpy(&inputBuffers.viewMatrix, &gBufferViewMat, sizeof(gBufferViewMat));
 	//memcpy(&inputBuffers.projMatrix, &gBufferProjMat, sizeof(gBufferProjMat));
 	inputBuffers.viewMatrix = *(VXGI::float4x4*)&gBufferViewMat;
@@ -2046,7 +1994,7 @@ void TestApplication::RenderToGBufferBegin()
 
 	auto perspectiveMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
 	//auto reverse_z = reverseZ(perspectiveMat);
-	RenderScene(/*m_Cameras[SelectedCamera].GetViewMatrix()*/m_FollowCharacterViewMatrix, perspectiveMat, m_DeferredVertexShader, m_DeferredPixelShader, m_NullGeometryShader, false, nullptr, 0, true);
+	RenderScene(/*m_Cameras[SelectedCamera].GetViewMatrix()*/m_CameraViewMatrix, perspectiveMat, m_DeferredVertexShader, m_DeferredPixelShader, m_NullGeometryShader, false, nullptr, 0, true);
 }
 
 void TestApplication::RenderToGBufferEnd()
@@ -2089,7 +2037,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		lightCb.cubeView[i] = m_PointLightDepthCaptureViews[i];
 	}
 	lightCb.cubeProj = lightProjMat;
-	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_FollowCharacterCameraPos;
+	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_CameraPos;
 	lightCb.showDiffuseTexture = m_bShowDiffuseTexture;
 	lightCb.enableGI = m_bEnableGI;
 
@@ -2120,9 +2068,53 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		modelMat = glm::rotate(modelMat, glm::radians(rotate[1]), glm::vec3(0.f, 1.f, 0.f));
 		modelMat = glm::rotate(modelMat, glm::radians(rotate[2]), glm::vec3(0.f, 0.f, 1.f));
 		modelMat = glm::scale(modelMat, glm::vec3(scale[0], scale[1], scale[2]));
-		if (i == 0)
-			modelMat = coltMat;    // games with physics
+		//if (i == 0)
+		//	modelMat = coltMat;   // games with physics
 		cb.modelMat = modelMat;
+		if (i == 0)           /// attaching pistol to the right hand
+		{
+			auto boneInfoMap = m_Models[2]->GetBoneInfoMap();
+			auto it = boneInfoMap.find("mixamorig:RightHand");
+			if (it == boneInfoMap.end()) {
+				std::cout << "Bone not found!\n";
+				m_Running = false;
+			}
+			else {
+
+				auto translate = props[2].translation;
+				auto rotate = props[2].rotation;
+				auto scale = props[2].scale;
+				auto characterMat = glm::mat4(1.f);
+				characterMat = glm::translate(characterMat, glm::vec3(translate[0], translate[1], translate[2]));
+				characterMat = glm::rotate(characterMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
+				characterMat = glm::rotate(characterMat, glm::radians(rotate[1]), glm::vec3(0.f, 1.f, 0.f));
+				characterMat = glm::rotate(characterMat, glm::radians(rotate[2]), glm::vec3(0.f, 0.f, 1.f));
+				characterMat = glm::scale(characterMat, glm::vec3(scale[0], scale[1], scale[2]));
+
+				auto gunPos = glm::vec3(4.5f, 10.5f, 1.225f);
+				translate = gunPos;
+				rotate = glm::vec3(0.f, 90.f, 0.f);
+				scale = props[0].scale;
+				auto modelMat = glm::mat4(1.f);
+				modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
+				modelMat = glm::translate(modelMat, glm::vec3(0.f, 0.f, 0.f));
+				modelMat = glm::rotate(modelMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
+				modelMat = glm::rotate(modelMat, glm::radians(rotate[1]), glm::vec3(0.f, 1.f, 0.f));
+				modelMat = glm::rotate(modelMat, glm::radians(rotate[2]), glm::vec3(0.f, 0.f, 1.f));
+				modelMat = glm::scale(modelMat, glm::vec3(scale[0], scale[1], scale[2]));
+				modelMat = glm::scale(modelMat, glm::vec3(15.f, 15.f, 15.f));
+
+				BoneInfo value = it->second;
+				glm::mat4 boneMat = value.offset;
+
+				auto childFinalBoneMatrix = m_Animator->GetFinalBoneMatrices()[value.id];
+
+				glm::mat4 finalBoneMatrix = childFinalBoneMatrix * glm::inverse(boneMat);
+
+				cb.modelMat = characterMat * finalBoneMatrix * modelMat;
+			}
+		}
+
 		cb.viewMat = viewMatrix;
 		cb.projMat = projMatrix;
 		cb.normalMat = glm::transpose(glm::inverse(modelMat));
@@ -2141,7 +2133,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 			auto finalBoneMatrices = m_Animator->GetFinalBoneMatrices();
 			for (int i = 0; i < finalBoneMatrices.size(); i++)
 			{
-				saCb.finalBonesMatrices[i] = finalBoneMatrices[i];			
+				saCb.finalBonesMatrices[i] = finalBoneMatrices[i];
 			}
 		}
 		else
@@ -2176,15 +2168,15 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 			m_DX11DeviceContext->PSSetSamplers(1, 1, &g_pSamplerComparison);
 
 
-		if (frustumCulling)
+		if (frustumCulling && i != 2)
 		{
 			Frustum frustum;
 			frustum.ConstructFrustum(viewMatrix, projMatrix, FAR_PLANE);
-			m_MeshesDrawn += m_Models[i]->Draw(clippingBoxes, numBoxes, modelMat, &frustum);
+			m_MeshesDrawn += m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, &frustum);
 		}
 		else
 		{
-			m_Models[i]->Draw(clippingBoxes, numBoxes, modelMat, nullptr);
+			m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, nullptr);
 		}
 	}
 }
@@ -2292,8 +2284,6 @@ void TestApplication::cleanupPhysics()
 		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
-
-	printf("SnippetHelloWorld done.\n");
 }
 
 void TestApplication::renderPhysics(float deltaTime)
@@ -2485,7 +2475,57 @@ void TestApplication::FMODCleanup()
 	m_FmodSystem->release();
 }
 
-void TestApplication::FollowCharacter(glm::mat4& viewMatrix)
+float easeInQuart(float t) {
+	t *= t;
+	return t * t;
+}
+
+glm::quat TestApplication::RotateTowards(const glm::quat& from, const glm::quat& to, float maxAngleDegrees)
+{
+	if (from == to)
+		return to;
+
+	glm::vec3 fromVector = from * glm::vec3(0.f, 0.f, 1.f);
+	glm::vec3 toVector = to * glm::vec3(0.f, 0.f, 1.f);
+
+	if (glm::length(fromVector) <= 0.0001)
+		return to;
+	else if (glm::length(toVector) <= 0.0001)
+		return from;
+
+	glm::vec3 fromDirection = glm::normalize(fromVector);
+	glm::vec3 toDirection = glm::normalize(toVector);
+
+	float angleRadians = glm::acos(glm::dot(fromDirection, toDirection));
+
+	if (glm::degrees(angleRadians) <= 90.f)
+	{
+		maxAngleDegrees *= glm::degrees(angleRadians) / 180.f + 0.25f;
+		if (maxAngleDegrees <= 0.1f || maxAngleDegrees >= 360.f)
+			maxAngleDegrees = 0.1f;
+	}
+
+	float angleDegrees = std::min(glm::degrees(angleRadians), maxAngleDegrees);
+
+	if (angleDegrees <= 0.1f || angleDegrees >= 360.f)
+		angleDegrees = 0.1f;
+
+	glm::vec3 axis = glm::cross(fromDirection, toDirection);
+
+	glm::quat rotationIncrement = glm::angleAxis(glm::radians(angleDegrees), axis);
+
+	glm::vec3 result = rotationIncrement * fromDirection;
+
+	float angle = glm::atan(result.x, result.z); // Note: I expected atan2(z,x) but OP reported success with atan2(x,z) instead! Switch around if you see 90° off.
+	float qx = 0;
+	float qy = 1 * glm::sin(angle / 2);
+	float qz = 0;
+	float qw = glm::cos(angle / 2);
+	return glm::quat(qw, qx, qy, qz);
+}
+
+
+void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos, glm::vec3& cameraFrontVector)
 {
 	// camera follows model
 	glm::vec3 eye = glm::vec3(0.f, 0.f, 1.f);
@@ -2494,7 +2534,7 @@ void TestApplication::FollowCharacter(glm::mat4& viewMatrix)
 	static float yaw = 0.f;
 	static float pitch = 0.f;
 
-	/*auto pad = m_GamePad->GetState(0);
+	auto pad = m_GamePad->GetState(0);
 	if (pad.IsConnected())
 	{
 		if (pad.IsViewPressed())
@@ -2512,94 +2552,143 @@ void TestApplication::FollowCharacter(glm::mat4& viewMatrix)
 			yaw += pad.thumbSticks.rightX * ROTATION_GAIN;
 			pitch -= pad.thumbSticks.rightY * ROTATION_GAIN;
 		}
-	}*/
+	}
 	if (mouseMoving)
 	{
 		yaw += Xoffset * m_DeltaTime * 5.f;
 		pitch -= Yoffset * m_DeltaTime * 5.f;
 	}
+
 	if (pitch >= 60.f)
 		pitch = 60.f;
 	else if (pitch <= -15.f)
 		pitch = -15.f;
-	yaw = fmodf(yaw, 360.f);
+	yaw = glm::mod(yaw, 360.f);
 	//std::cout << "Yaw: " << yaw << '\n';
 	//std::cout << "Pitch: " << pitch << '\n';
-
-
 	mouseMoving = false;
 
 	auto quat = glm::quat(glm::vec3(glm::radians(pitch), glm::radians(yaw), 0.f));
 	auto quatYaw = glm::quat(glm::vec3(0.f, glm::radians(yaw), 0.f));
-	auto dir = quat * glm::vec3(0.f, 0.f, -5.f);
+	auto dir = quat * glm::vec3(0.f, 0.f, -5.f / m_FollowCharacterCameraZoom);
 	auto dirYaw = quatYaw * glm::vec3(0.f, 0.f, 5.f);
 	auto up = glm::vec3(0.f, 1.f, 0.f);
 	auto headPos = props[2].translation + glm::vec3(0.f, 1.5f, 0.f);
 	auto eye3 = dir + headPos;
 	eye = eye3;
 
-	m_FollowCharacterCameraPos = glm::vec3(eye);
-	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos, glm::vec3(0.f, 1.f, 0.f));
-
 	//transform.rotation = quatYaw;
-	transform.position = glm::vec3(props[2].translation.x, props[2].translation.y, props[2].translation.z);
+	transform.position = props[2].translation;
 
-	float camSpeed = 5.f;
-	float rotSpeed = 30.f;
-		
+	// set default camera properties
+	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos, glm::vec3(0.f, 1.f, 0.f));
+	cameraPos = glm::vec3(eye);
+	cameraFrontVector = transform.position - cameraPos;
 
+	float moveSpeed = 5.f;
+	float rotSpeed = 1600.f * m_DeltaTime;
+
+	glm::vec3 velocityVector = glm::vec3(0.f);
+	float verticalAxis = 0.f;
+	float horizontalAxis = 0.f;
+
+	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_RELEASE &&
+		glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_S) == GLFW_RELEASE &&
+		glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_A) == GLFW_RELEASE &&
+		glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_D) == GLFW_RELEASE)
+		bWalking = false;
 	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
 	{
-		transform.position += glm::normalize(dirYaw) * m_DeltaTime * camSpeed;		
-		transform.rotation = rotateTowards(transform.rotation, quatYaw, rotSpeed);
-		bPrevWalking = bWalking;
+		verticalAxis = 1.f;
 		bWalking = true;
-	}
-	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_RELEASE)
-	{
-		bPrevWalking = bWalking;
-		bWalking = false;
 	}
 	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_S) == GLFW_PRESS)
 	{
-		transform.position -= glm::normalize(dirYaw) * m_DeltaTime * camSpeed;
-		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw + 180.f), 0.f)), rotSpeed);
-		//bPrevWalking = bWalking;
+		verticalAxis = -1.f;
 		bWalking = true;
 	}
 	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_A) == GLFW_PRESS)
 	{
-		transform.position += glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;
-		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw - 90.f), 0.f)), rotSpeed);
+		horizontalAxis = -1.f;
 		bWalking = true;
 	}
 	if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_D) == GLFW_PRESS)
 	{
-		transform.position -= glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;
-		transform.rotation = rotateTowards(transform.rotation, glm::quat(glm::vec3(0.f, glm::radians(yaw + 90.f), 0.f)), rotSpeed);
+		horizontalAxis = 1.f;
 		bWalking = true;
 	}
 
-	//if (pad.thumbSticks.leftY != 0.f)
-	//{
-	//	transform.position += pad.thumbSticks.leftY * glm::normalize(dirYaw) * m_DeltaTime * camSpeed;
-	//	bWalking = true;
-	//}		
-	//if (pad.thumbSticks.leftX != 0.f)
-	//{
-	//	transform.position += -pad.thumbSticks.leftX * glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * camSpeed;	
-	//	bWalking = true;
-	//}	
-		
+	float movementSpeed = 5.f;
 
-	props[2].translation.x = transform.position.x;
-	props[2].translation.y = transform.position.y;
-	props[2].translation.z = transform.position.z;
+	float v = verticalAxis;
+	float h = horizontalAxis;
+
+	float moveAmount = glm::clamp(glm::abs(h) + glm::abs(v));
+
+	glm::quat targetRotation = transform.rotation;
+
+	glm::vec3 moveInput = glm::vec3(h, 0.f, v);
+
+	glm::vec3 velocity = glm::vec3(0.f);
+
+	auto planarDirection = glm::vec3(0.f, glm::radians(yaw), 0.f);
+	if (glm::length(moveInput) >= std::numeric_limits<float>().min() && glm::length(planarDirection) >= std::numeric_limits<float>().min())
+	{
+		moveInput = glm::normalize(moveInput);
+		auto moveDir = glm::normalize(glm::quat(planarDirection) * moveInput);
+
+		velocity = moveDir;
+
+		if (moveAmount > 0.f)
+			targetRotation = glm::quatLookAtLH(moveDir, glm::vec3(0.f, 1.f, 0.f));
+	}
+
+
+	if (targetRotation != transform.rotation)
+		transform.rotation = RotateTowards(transform.rotation, targetRotation, rotSpeed);
+
+	transform.position += velocity * m_DeltaTime * moveSpeed;
+
+
+
+	if (pad.thumbSticks.leftY != 0.f)
+	{
+		transform.position += pad.thumbSticks.leftY * glm::normalize(dirYaw) * m_DeltaTime * moveSpeed;
+		bWalking = true;
+	}
+	if (pad.thumbSticks.leftX != 0.f)
+	{
+		transform.position += -pad.thumbSticks.leftX * glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * moveSpeed;
+		transform.rotation = glm::quat(glm::vec3(0.f, glm::radians(yaw + 90.f * pad.thumbSticks.leftX), 0.f));
+
+		bWalking = true;
+	}
 
 	auto eulerRotation = glm::eulerAngles(transform.rotation);
 	props[2].rotation.x = glm::degrees(eulerRotation.x);
 	props[2].rotation.y = glm::degrees(eulerRotation.y);
 	props[2].rotation.z = glm::degrees(eulerRotation.z);
+
+	props[2].translation = transform.position;
+
+	if (m_Animator)
+	{
+		if (!bWalking)
+		{
+			if (m_IdleRunBlendFactor > 0.f)
+				m_IdleRunBlendFactor -= m_DeltaTime * 8.f;
+			if (m_IdleRunBlendFactor < 0.f)
+				m_IdleRunBlendFactor = 0.f;
+		}
+		else if (bWalking)
+		{
+			if (m_IdleRunBlendFactor < 1.f)
+				m_IdleRunBlendFactor += m_DeltaTime * 8.f;
+			if (m_IdleRunBlendFactor > 1.f)
+				m_IdleRunBlendFactor = 1.f;
+		}
+		m_Animator->BlendTwoAnimations(m_IdleAnimation, m_RunAnimation, m_IdleRunBlendFactor, m_DeltaTime); // 30.0f intentional here, otherwise they play too slowly
+	}
 }
 
 void TestApplication::PhysXEventCallback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)

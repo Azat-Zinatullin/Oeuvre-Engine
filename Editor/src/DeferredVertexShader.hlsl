@@ -54,7 +54,7 @@ Output VSMain(Input input)
         }
         float4 localPosition = mul(float4(input.position, 1.0f), finalBonesMatrices[input.boneIds[i]]);
         totalPosition += localPosition * input.boneWeights[i];
-        float3 localNormal = mul(input.normal, finalBonesMatrices[input.boneIds[i]]);
+        float3 localNormal = mul(input.normal, (float3x3)finalBonesMatrices[input.boneIds[i]]);
         totalNormal += localNormal * input.boneWeights[i];
     }
     

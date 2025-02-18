@@ -247,7 +247,7 @@ protected:
 	ID3D11ShaderResourceView* confidenceSRV = nullptr;
 	ID3D11ShaderResourceView* indirectSpecularSRV = nullptr;
 
-	float g_fVoxelSize = 8.f/(1/SPONZA_SCALE);
+	float g_fVoxelSize = 8.f/(1.f/SPONZA_SCALE);
 	bool g_bEnableMultiBounce = true;
 	float g_fMultiBounceScale = 1.0f;
 	int g_nMapSize = 128;
@@ -390,6 +390,14 @@ protected:
 	PhysXEventCallback* m_physXEventCallback = nullptr;
 	PhysXFilterCallback* m_physXFilterCallback = nullptr;
 
+
+	// deafult camera properties //////////////////
+	glm::mat4 m_CameraViewMatrix = glm::mat4(1.f);
+	glm::vec3 m_CameraPos = glm::vec3(1.f);
+	glm::vec3 m_CameraFrontVector = glm::vec3(1.f);
+	///////////////////////////////////////////////
+
+
 	Model* m_AnimatedModel = nullptr;
 	Animator* m_Animator = nullptr;
 	Animation* m_RunAnimation = nullptr;
@@ -397,7 +405,8 @@ protected:
 
 	float m_IdleRunBlendFactor = 0.f;
 
-	void FollowCharacter(glm::mat4& viewMatrix);
+	glm::quat RotateTowards(const glm::quat& from, const glm::quat& to, float maxAngleDegrees);
+	void MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos, glm::vec3 & cameraFrontVector);
 	float Xoffset = 0.f, Yoffset = 0.f;
 	bool mouseMoving = false;
 
@@ -410,9 +419,7 @@ protected:
 	bool bWalking = true;
 	bool bPrevWalking = true;
 
-	glm::mat4 m_FollowCharacterViewMatrix = glm::mat4(1.f);
-	glm::vec3 m_FollowCharacterCameraPos = glm::vec3(1.f);
-
+	float m_FollowCharacterCameraZoom = 1.f;
 	PxRigidDynamic* m_CharacterCapsuleCollider = nullptr;
 
 	std::unique_ptr<DirectX::GamePad> m_GamePad;

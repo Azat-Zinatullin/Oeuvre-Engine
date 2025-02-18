@@ -380,7 +380,8 @@ namespace Oeuvre
 
 					aiString texFullPath{};
 					if (m_filePath == "..\\resources\\sponza\\glTF\\Sponza.gltf" ||
-						m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx")
+						m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx" || 
+						m_filePath == "..\\resources\\sponza-gltf-pbr\\sponza.glb")
 					{
 						std::string filePath = m_filePath;
 						int lastSlashPos = filePath.find_last_of('\\');

@@ -188,84 +188,49 @@ float SpotShadowPCF(float4 lightSpacePosition)
 }
 
 static const float PI = 3.14159265359;
-static const float Epsilon = 0.00001;
 
-// Constant normal incidence Fresnel factor for all dielectrics.
-static const float3 Fdielectric = 0.04;
-
-//float3 FresnelSchlick(float cosTheta, float3 F0)
-//{
-//    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
-//}
-
-//float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
-//{
-//    return F0 + (max(float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
-//}
-
-//float DistributionGGX(float3 N, float3 H, float roughness)
-//{
-//    float a = roughness * roughness;
-//    float a2 = a * a;
-//    float NdotH = max(dot(N, H), 0.0);
-//    float NdotH2 = NdotH * NdotH;
-	
-//    float num = a2;
-//    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
-//    denom = PI * denom * denom;
-	
-//    return num / denom;
-//}
-
-//float GeometrySchlickGGX(float NdotV, float roughness)
-//{
-//    float r = (roughness + 1.0);
-//    float k = (r * r) / 8.0;
-
-//    float num = NdotV;
-//    float denom = NdotV * (1.0 - k) + k;
-	
-//    return num / denom;
-//}
-//float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
-//{
-//    float NdotV = max(dot(N, V), 0.0);
-//    float NdotL = max(dot(N, L), 0.0);
-//    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
-//    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
-	
-//    return ggx1 * ggx2;
-//}
-
-// GGX/Towbridge-Reitz normal distribution function.
-// Uses Disney's reparametrization of alpha = roughness^2.
-float ndfGGX(float cosLh, float roughness)
-{
-    float alpha = roughness * roughness;
-    float alphaSq = alpha * alpha;
-
-    float denom = (cosLh * cosLh) * (alphaSq - 1.0) + 1.0;
-    return alphaSq / (PI * denom * denom);
-}
-
-// Single term for separable Schlick-GGX below.
-float gaSchlickG1(float cosTheta, float k)
-{
-    return cosTheta / (cosTheta * (1.0 - k) + k);
-}
-
-// Schlick-GGX approximation of geometric attenuation function using Smith's method.
-float gaSchlickGGX(float cosLi, float cosLo, float roughness)
-{
-    float r = roughness + 1.0;
-    float k = (r * r) / 8.0; // Epic suggests using this roughness remapping for analytic lights.
-    return gaSchlickG1(cosLi, k) * gaSchlickG1(cosLo, k);
-}
-
-// Shlick's approximation of the Fresnel factor.
-float3 fresnelSchlick(float3 F0, float cosTheta)
+float3 FresnelSchlick(float cosTheta, float3 F0)
 {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float3 FresnelSchlickRoughness(float cosTheta, float3 F0, float roughness)
+{
+    return F0 + (max(float3(1.0 - roughness, 1.0 - roughness, 1.0 - roughness), F0) - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
+float DistributionGGX(float3 N, float3 H, float roughness)
+{
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+	
+    float num = a2;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    denom = PI * denom * denom;
+	
+    return num / denom;
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness)
+{
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+
+    float num = NdotV;
+    float denom = NdotV * (1.0 - k) + k;
+	
+    return num / denom;
+}
+float GeometrySmith(float3 N, float3 V, float3 L, float roughness)
+{
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NdotV, roughness);
+    float ggx1 = GeometrySchlickGGX(NdotL, roughness);
+	
+    return ggx1 * ggx2;
 }
 
 float Luminance(float3 color)
@@ -302,64 +267,65 @@ float3 CalcLight(float2 uv)
     
     float4 lightViewPosition = gBufferLightViewPosition.Sample(pointTextureSampler, uv);
     
-    
-    // Outgoing light direction (vector from world-space fragment position to the "eye").
-    float3 Lo = normalize(camPos - WorldPos.xyz);
-    
+    float ao = 1.0;
+
     float3 N = normalize(normal);
-    
-    // Angle between surface normal and outgoing light direction.
-    float cosLo = max(0.0, dot(N, Lo));
-    
-    // Specular reflection vector.
-    float3 Lr = 2.0 * cosLo * N - Lo;
-    
-    // Fresnel reflectance at normal incidence (for metals use albedo color).
-    float3 F0 = lerp(Fdielectric, albedo.rgb, metallic);
-    
-    
-    // Direct lighting calculation for analytical lights.
-    float3 directLighting = 0.0;
-    for (uint i = 0; i < numLights; ++i)
+    float3 V = normalize(camPos - WorldPos.xyz);
+
+    float3 F0 = float3(0.04, 0.04, 0.04);
+    F0 = lerp(F0, albedo.rgb, metallic);
+	           
+    // reflectance equation
+    float3 Lo = float3(0.0, 0.0, 0.0);
+    for (int i = 0; i < numLights; ++i)
     {
-        float3 Li = normalize(lightPos[i].xyz - WorldPos.xyz);
-        
+        // calculate per-light radiance
+        float3 L = normalize(lightPos[i].xyz - WorldPos.xyz);
+        float3 H = normalize(V + L);
         float distance = length(lightPos[i].xyz - WorldPos.xyz);
         float attenuation = 1.0 / (conLinQuad[0] + conLinQuad[1] * distance + conLinQuad[2] * (distance * distance));
     
-        float3 Lradiance = lightColor * attenuation;
+        float3 radiance = lightColor * attenuation;
         
-		// Half-vector between Li and Lo.
-        float3 Lh = normalize(Li + Lo);
-
-		// Calculate angles between surface normal and various light vectors.
-        float cosLi = max(0.0, dot(N, Li));
-        float cosLh = max(0.0, dot(N, Lh));
-
-		// Calculate Fresnel term for direct lighting. 
-        float3 F = fresnelSchlick(F0, max(0.0, dot(Lh, Lo)));
-		// Calculate normal distribution for specular BRDF.
-        float D = ndfGGX(cosLh, roughness);
-		// Calculate geometric attenuation for specular BRDF.
-        float G = gaSchlickGGX(cosLi, cosLo, roughness);
-
-		// Diffuse scattering happens due to light being refracted multiple times by a dielectric medium.
-		// Metals on the other hand either reflect or absorb energy, so diffuse contribution is always zero.
-		// To be energy conserving we must scale diffuse BRDF contribution based on Fresnel factor & metalness.
-        float3 kd = lerp(float3(1, 1, 1) - F, float3(0, 0, 0), metallic);
-
-		// Lambert diffuse BRDF.
-		// We don't scale by 1/PI for lighting & material units to be more convenient.
-		// See: https://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
-        float3 diffuseBRDF = kd * albedo.rgb;
-
-		// Cook-Torrance specular microfacet BRDF.
-        float3 specularBRDF = (F * D * G) / max(Epsilon, 4.0 * cosLi * cosLo);
-
-		// Total contribution for this light.
-        directLighting += (diffuseBRDF + specularBRDF) * Lradiance * cosLi;
+        // cook-torrance brdf
+        float NDF = DistributionGGX(N, H, roughness);
+        float G = GeometrySmith(N, V, L, roughness);
+        float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+        
+        float3 kS = F;
+        float3 kD = float3(1.f, 1.f, 1.f) - kS;
+        kD *= 1.0 - metallic;
+        
+        float3 numerator = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+        float3 specular = numerator / max(denominator, 0.001);
+            
+        // add to outgoing radiance Lo
+        float NdotL = max(dot(N, L), 0.0);
+        Lo += (kD * albedo.rgb / PI + specular) * radiance * NdotL;
     }
-   
+
+    // Spotlight ////////////////////////////////////////////////////////
+    //float3 L = normalize(lightPos[numLights].xyz - WorldPos.xyz);
+    //float3 H = normalize(V + L);
+        
+    //// cook-torrance brdf
+    //float NDF = DistributionGGX(N, H, roughness);
+    //float G = GeometrySmith(N, V, L, roughness);
+    //float3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+        
+    //float3 kS = F;
+    //float3 kD = float3(1.f, 1.f, 1.f) - kS;
+    //kD *= 1.0 - metallic;
+        
+    //float3 numerator = NDF * G * F;
+    //float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0);
+    //float3 specular = numerator / max(denominator, 0.001);
+            
+    //// add to outgoing radiance Lo
+    //float NdotL = max(dot(N, L), 0.0);
+    //Lo += (kD * albedo.rgb / PI + specular) * NdotL;
+    ////////////////////////////////////////////////////////////////////
 
     float4 indirectDiff = indirectDiffuse.Sample(pointTextureSampler, uv);
     float indirectConf = indirectConfidence.Sample(pointTextureSampler, uv).r;
@@ -399,11 +365,16 @@ float3 CalcLight(float2 uv)
 
     float3 color = float3(1.f, 1.f, 1.f);
     if (!showDiffuseTexture)
-    {           
+    {     
+        float3 F = FresnelSchlickRoughness(max(dot(N, V), 0.0), F0, roughness);
+        float3 kS = F;
+        float3 kD = float3(1.0, 1.0, 1.0) - kS;
+        kD *= 1.0 - metallic;
+        
         if (enableGI)
-            color = directLighting * shadow + albedo.rgb * (lightColor * ambient + indirectDiff.rgb) + albedo.a * indirectSpec.rgb;
+            color = Lo * shadow  + albedo.rgb * (lightColor * ambient + indirectDiff.rgb) + albedo.a * indirectSpec.rgb * (1 - kS) * metallic;
         else
-            color = directLighting * shadow + albedo.rgb * 0.05f;
+            color = Lo * shadow  + albedo.rgb * 0.05f;
     }
     else
     {
