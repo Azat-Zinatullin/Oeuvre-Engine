@@ -139,6 +139,11 @@ using namespace DirectX;
 
 namespace Oeuvre
 {
+	std::string base_name(std::string const& path)
+	{
+		return path.substr(path.find_last_of("/\\") + 1);
+	}
+
 	Model::Model(const std::string& filePath, const std::string& albedoTexPath, const std::string& normalTexPath, const std::string& roughnessTexPath, const std::string& metallicTexPath)
 		: m_filePath(filePath)
 	{
@@ -180,6 +185,21 @@ namespace Oeuvre
 			}
 		}
 
+		if (scene->HasAnimations())
+		{
+			for (int i = 0; i < scene->mNumAnimations; i++)
+			{
+				printf("Animation %s:\n {", scene->mAnimations[i]->mName.C_Str());
+				for (int j = 0; j < scene->mAnimations[i]->mNumChannels; j++)
+				{
+					auto channel = scene->mAnimations[i]->mChannels[j];
+
+					printf("\tChannel %s\n", channel->mNodeName.C_Str());
+				}
+				printf("}\n");
+			}
+		}
+
 		m_pTextureAlbedo = Texture2D::Create(albedoTexPath.c_str());
 		m_pTextureNormal = Texture2D::Create(normalTexPath.c_str());
 		m_pTextureRoughness = Texture2D::Create(roughnessTexPath.c_str());
@@ -190,7 +210,7 @@ namespace Oeuvre
 	{
 	}
 
-	int Oeuvre::Model::Draw(const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum)
+	DrawInfo Oeuvre::Model::Draw(const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum)
 	{
 		if (m_pTextureAlbedo.get())
 			m_pTextureAlbedo->Bind(0);
@@ -202,6 +222,7 @@ namespace Oeuvre
 			m_pTextureMetalness->Bind(3);
 
 		int meshesDrawn = 0;
+		int totalMeshes = 0;
 		for (int i = 0; i < m_meshes.size(); i++)
 		{
 			AABB meshBounds = m_meshes[i].GetBounds();
@@ -251,8 +272,9 @@ namespace Oeuvre
 				m_meshes[i].Draw(!m_bUseCombinedTextures);
 				meshesDrawn++;
 			}
+			totalMeshes++;
 		}
-		return meshesDrawn;
+		return DrawInfo{ meshesDrawn, totalMeshes };
 	}
 
 	void Model::ChangeTexture(const std::string& newTexPath, TextureType type)
@@ -280,6 +302,7 @@ namespace Oeuvre
 
 	void Model::processNode(aiNode* node, const aiScene* scene)
 	{
+		printf("Node name: %s {\n", node->mName.C_Str());
 		// process all the node's meshes (if any)
 		for (unsigned int i = 0; i < node->mNumMeshes; i++)
 		{
@@ -292,6 +315,7 @@ namespace Oeuvre
 		{
 			processNode(node->mChildren[i], scene);
 		}
+		printf("}\n");
 	}
 
 	Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
@@ -327,6 +351,7 @@ namespace Oeuvre
 			}
 			else
 				vertex.Tex = glm::vec2(0.f);
+
 			vertex.Normal.x = mesh->mNormals[i].x;
 			vertex.Normal.y = mesh->mNormals[i].y;
 			vertex.Normal.z = mesh->mNormals[i].z;
@@ -381,12 +406,15 @@ namespace Oeuvre
 					aiString texFullPath{};
 					if (m_filePath == "..\\resources\\sponza\\glTF\\Sponza.gltf" ||
 						m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx" || 
-						m_filePath == "..\\resources\\sponza-gltf-pbr\\sponza.glb")
+						m_filePath == "..\\resources\\sponza-gltf-pbr\\sponza.glb" ||
+						m_filePath == "..\\resources\\classic_sponza\\Meshes\\Sponza_Modular.FBX" ||
+						m_filePath == "..\\resources\\sponza_pbr\\sponza.obj" ||
+						m_filePath == "..\\resources\\SunTemple_v4\\SunTemple.fbx")
 					{
 						std::string filePath = m_filePath;
 						int lastSlashPos = filePath.find_last_of('\\');
 						filePath.erase(lastSlashPos, filePath.size() - lastSlashPos);
-						std::cout << "Model path: " << filePath << '\n';
+						//std::cout << "Model path: " << filePath << '\n';
 						size_t offset = filePath.find("\\source");
 						if (offset != std::string::npos)
 						{
@@ -395,11 +423,28 @@ namespace Oeuvre
 						}
 
 						char fullPath[1024];
-						if (m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx")
+						if (m_filePath == "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\bistro.fbx" ||
+							m_filePath == "..\\resources\\sponza_pbr\\sponza.obj")
 						{
 							std::string pathStr = path.C_Str();
-							snprintf(fullPath, 1024, "%s%s", "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\bistro\\", pathStr.c_str());
+							snprintf(fullPath, 1024, "%s%s", "../resources/sponza_pbr/", pathStr.c_str());
 							std::cout << "Bistro path: " << fullPath << '\n';
+						}
+						else if (m_filePath == "..\\resources\\classic_sponza\\Meshes\\Sponza_Modular.FBX")
+						{
+							std::string pathStr = path.C_Str();
+							pathStr = base_name(pathStr);
+							std::cout << "base name: " << pathStr << '\n';
+							pathStr = pathStr.substr(0, pathStr.find_last_of('.'));
+							auto pathStrName = pathStr.substr(0, pathStr.find_last_of('_'));
+							std::cout << "Erased path: " << pathStr << '\n';
+							if (pathStr.find("Fabric") != std::string::npos)
+							{
+								snprintf(fullPath, 1024, "%s%s\\%s%s", "..\\resources\\classic_sponza\\Textures\\", "Fabrics\\", pathStr.c_str(), ".png");
+							}
+							else
+								snprintf(fullPath, 1024, "%s%s\\%s%s", "..\\resources\\classic_sponza\\Textures\\", pathStrName.c_str(), pathStr.c_str(), ".png");
+							std::cout << "FULL PATH: " << fullPath << '\n';
 						}
 						else
 						{
@@ -446,9 +491,11 @@ namespace Oeuvre
 					case aiTextureType_NORMALS:
 						textures.emplace_back(std::pair<TextureType, std::shared_ptr<Texture>>(TextureType::NORMAL, texture));
 						break;
+					case aiTextureType_SHININESS:
 					case aiTextureType_DIFFUSE_ROUGHNESS:
 						textures.emplace_back(std::pair<TextureType, std::shared_ptr<Texture>>(TextureType::ROUGHNESS, texture));
 						break;
+					case aiTextureType_SPECULAR:
 					case aiTextureType_METALNESS:
 						textures.emplace_back(std::pair<TextureType, std::shared_ptr<Texture>>(TextureType::METALLIC, texture));
 						break;

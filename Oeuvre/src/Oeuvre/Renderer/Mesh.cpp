@@ -122,7 +122,7 @@ namespace Oeuvre
 
 	Mesh::~Mesh()
 	{
-		std::cout << "mesh destructor worked\n";
+		//std::cout << "mesh destructor worked\n";
 	}
 
 	void Oeuvre::Mesh::Draw(bool applyTextures)

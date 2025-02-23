@@ -32,7 +32,7 @@ namespace Oeuvre
 			{
 				m_CurrentTime += m_CurrentAnimation->GetTicksPerSecond() * dt;
 				m_CurrentTime = fmod(m_CurrentTime, m_CurrentAnimation->GetDuration());
-				CalculateBoneTransform(&m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f));
+				CalculateBoneTransform(m_CurrentAnimation, &m_CurrentAnimation->GetRootNode(), glm::mat4(1.0f), "nothingToIgnore");
 			}
 		}
 
@@ -42,12 +42,16 @@ namespace Oeuvre
 			m_CurrentTime = 0.0f;
 		}
 
-		void CalculateBoneTransform(const AssimpNodeData* node, glm::mat4 parentTransform)
+		void CalculateBoneTransform(Animation* animation, const AssimpNodeData* node, const glm::mat4& parentTransform, const std::string boneToIgnore)
 		{
 			std::string nodeName = node->name;
+
+			if (nodeName == boneToIgnore)
+				return;
+
 			glm::mat4 nodeTransform = node->transformation;
 
-			Bone* Bone = m_CurrentAnimation->FindBone(nodeName);
+			Bone* Bone = animation->FindBone(nodeName);
 
 			if (Bone)
 			{
@@ -57,7 +61,7 @@ namespace Oeuvre
 
 			glm::mat4 globalTransformation = parentTransform * nodeTransform;
 
-			auto boneInfoMap = m_CurrentAnimation->GetBoneIDMap();
+			auto boneInfoMap = animation->GetBoneIDMap();
 			if (boneInfoMap.find(nodeName) != boneInfoMap.end())
 			{
 				int index = boneInfoMap[nodeName].id;
@@ -66,7 +70,7 @@ namespace Oeuvre
 			}
 
 			for (int i = 0; i < node->childrenCount; i++)
-				CalculateBoneTransform(&node->children[i], globalTransformation);
+				CalculateBoneTransform(animation, &node->children[i], globalTransformation, boneToIgnore);
 		}
 
 		std::vector<glm::mat4> GetFinalBoneMatrices()
@@ -97,6 +101,77 @@ namespace Oeuvre
 			CalculateBlendedBoneTransform(pBaseAnimation, &pBaseAnimation->GetRootNode(), pLayeredAnimation, &pLayeredAnimation->GetRootNode(), currentTimeBase, currentTimeLayered, glm::mat4(1.0f), blendFactor);
 		}
 
+		glm::mat4 GetGlobalBoneTransform(Animation* animation, const std::string boneName)
+		{
+			glm::mat4 nodeTransform = glm::mat4(1.f);
+
+			std::string bones[] = { 
+				"RootNode",
+				"Armature", 
+				"mixamorig:Hips", 
+				"mixamorig:Spine",
+				"mixamorig:Spine1", 
+				"mixamorig:Spine2", 
+				"mixamorig:Neck",
+				"mixamorig:Head"
+			};
+
+			for (int i = 0; i < 8; i++)
+			{
+				Bone* Bone = animation->FindBone(bones[i]);
+				if (Bone)
+				{
+					Bone->Update(m_CurrentTime);
+					nodeTransform = nodeTransform * Bone->GetLocalTransform();
+
+					if (boneName == Bone->GetBoneName())
+						break;
+				}
+			}
+			
+			return nodeTransform;
+		}
+
+		void BlendTwoAnimationsPerBone(Animation* pBaseAnimation, Animation* pLayeredAnimation, std::string boneName, float deltaTime, float yaw, float pitch, glm::vec3 pitchAxis)
+		{
+			if (!pBaseAnimation || !pLayeredAnimation)
+				return;
+
+			auto minDur = glm::min(pBaseAnimation->GetDuration(), pLayeredAnimation->GetDuration());
+
+			m_CurrentTime += pLayeredAnimation->GetTicksPerSecond() * deltaTime;
+			m_CurrentTime = fmod(m_CurrentTime, minDur);
+
+			auto baseNode = pBaseAnimation->GetRootNode();
+			auto layeredNode = pLayeredAnimation->GetRootNode();
+
+			AssimpNodeData* node = pLayeredAnimation->FindNode(&layeredNode, boneName);
+
+			//std::cout << "#### NODE NAME: " << node->name.c_str() << '\n';	
+
+			//glm::mat4 nodeTransform = Bone->GetLocalTransform();
+
+			glm::mat4 nodeTransform = GetGlobalBoneTransform(pBaseAnimation, "mixamorig:Spine");
+
+			//Bone* Bone = pLayeredAnimation->FindBone("mixamorig:Spine1");
+
+			//yaw -= 45.f;
+
+			//yaw = yaw > 180.f ? yaw - 360.f : yaw;
+
+			printf("yaw: %f\n", yaw);
+
+			printf("pitch: %f\n", pitch);
+			
+			if (pitch <= 0.f)
+				pitch = 360.f - pitch;
+			
+			nodeTransform *= glm::rotate(glm::mat4(1.f), glm::radians(pitch), pitchAxis);
+
+
+			CalculateBoneTransform(pLayeredAnimation, node, nodeTransform, "nothingToIgnore");
+			CalculateBoneTransform(pBaseAnimation, &baseNode, glm::mat4(1.f), boneName);
+		}
 
 		// Recursive function that sets interpolated bone matrices in the 'm_FinalBoneMatrices' vector
 		void CalculateBlendedBoneTransform(
@@ -142,10 +217,9 @@ namespace Oeuvre
 				m_FinalBoneMatrices[index] = globalTransformation * offset;
 			}
 
-			for (size_t i = 0; i < node->children.size(); ++i)
+			for (size_t i = 0; i < node->children.size() && i < nodeLayered->children.size(); ++i)
 			{
-				if (i < nodeLayered->children.size())
-					CalculateBlendedBoneTransform(pAnimationBase, &node->children[i], pAnimationLayer, &nodeLayered->children[i], currentTimeBase, currentTimeLayered, globalTransformation, blendFactor);
+				CalculateBlendedBoneTransform(pAnimationBase, &node->children[i], pAnimationLayer, &nodeLayered->children[i], currentTimeBase, currentTimeLayered, globalTransformation, blendFactor);
 			}
 	}
 

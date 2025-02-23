@@ -19,6 +19,12 @@ struct aiScene;
 
 namespace Oeuvre
 {
+	struct DrawInfo
+	{
+		int meshesDrawn = 0;
+		int totalMeshes = 0;
+	};
+
 	class Model
 	{
 		std::string m_filePath;
@@ -51,7 +57,7 @@ namespace Oeuvre
 		Model(const Model& other) = delete;
 		~Model();
 
-		int Draw(const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum);
+		DrawInfo Draw(const VXGI::Box3f* clippingBoxes, uint32_t numBoxes, const glm::mat4 modelMatrix, const Frustum* frustum);
 
 		void ChangeTexture(const std::string& newTexPath, TextureType type);
 

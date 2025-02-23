@@ -41,7 +41,7 @@ using namespace physx;
 
 #define SPONZA_SCALE 0.016f
 
-const float SCREEN_DEPTH = 1000.0f;
+const float SCREEN_DEPTH = 500.0f;
 const float SCREEN_NEAR = 0.1f;
 const int SHADOWMAP_WIDTH = 1024;
 const int SHADOWMAP_HEIGHT = 1024;
@@ -129,9 +129,9 @@ protected:
 	struct LightProps
 	{
 		glm::vec3 lightPos[NUM_POINT_LIGHTS];
-		float constant = 1.f;
-		float linear = 0.09f;
-		float quadratic = 0.032f;
+		float constant = 0.5f;
+		float linear = 0.001f;
+		float quadratic = 0.001f;
 		float color[3] = { 1.f, 1.f, 1.f };
 	};
 	LightProps lightProps;
@@ -183,7 +183,7 @@ protected:
 	// rendering cube
 	ID3D11Buffer* pCubeVertexBuffer, *pCubeIndexBuffer;
 	void RenderCubeInit();
-	void RenderCube(const glm::mat4& modelMat);
+	void RenderCube(const glm::mat4& modelMat, bool lightCube);
 
 	// rendering quad
 	ID3D11Buffer* pQuadVertexBuffer, *pQuadIndexBuffer;
@@ -300,7 +300,7 @@ protected:
 	glm::mat4 reverseZ(const glm::mat4& perspeciveMat);
 	ID3D11DepthStencilState* m_pGBufferReverseZDepthStencilState = nullptr;
 
-	const float NEAR_PLANE = 0.1f;
+	const float NEAR_PLANE = 0.01f;
 	const float FAR_PLANE = 10000.f;
 
 	bool g_bEnableSSAO = false;
@@ -316,7 +316,9 @@ protected:
 
 	bool m_bEnableVsync = true;
 
+	DrawInfo m_DrawInfo = {};
 	int m_MeshesDrawn = 0;
+	int m_TotalMeshes = 0;
 
 	// NVIDIA PhysX
 	PxDefaultAllocator		gAllocator;
@@ -334,7 +336,7 @@ protected:
 	void stepPhysics(float elapsedTime);
 	void cleanupPhysics();
 	void renderPhysics(float deltaTime);
-	PxRigidDynamic* createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& velocity = PxVec3(0));
+	PxRigidDynamic * createDynamic(const PxTransform& t, const PxGeometry& geometry, float density, const PxVec3& velocity = PxVec3(0));
 	void createStack(const PxTransform& t, PxU32 size, PxReal halfExtent);
 
 	glm::vec3 shapePos = glm::vec3(0.f);
@@ -381,7 +383,6 @@ protected:
 
 	class PhysXFilterCallback : PxSimulationFilterCallback
 	{
-		// Унаследовано через PxSimulationFilterCallback
 		PxFilterFlags pairFound(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, const PxActor* a0, const PxShape* s0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, const PxActor* a1, const PxShape* s1, PxPairFlags& pairFlags) override;
 		void pairLost(PxU64 pairID, PxFilterObjectAttributes attributes0, PxFilterData filterData0, PxFilterObjectAttributes attributes1, PxFilterData filterData1, bool objectRemoved) override;
 		bool statusChange(PxU64& pairID, PxPairFlags& pairFlags, PxFilterFlags& filterFlags) override;
@@ -402,6 +403,9 @@ protected:
 	Animator* m_Animator = nullptr;
 	Animation* m_RunAnimation = nullptr;
 	Animation* m_IdleAnimation = nullptr;
+	Animation* m_ShootingAnimation = nullptr;
+	Animation* m_LeftTurnAnimation = nullptr;
+	Animation* m_RightTurnAnimation = nullptr;
 
 	float m_IdleRunBlendFactor = 0.f;
 
@@ -409,6 +413,9 @@ protected:
 	void MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos, glm::vec3 & cameraFrontVector);
 	float Xoffset = 0.f, Yoffset = 0.f;
 	bool mouseMoving = false;
+
+	bool rightMouseButtonPressing = false;
+	bool rightMouseButtonPressed = false;
 
 	struct PlayerTransform
 	{
@@ -422,6 +429,46 @@ protected:
 	float m_FollowCharacterCameraZoom = 1.f;
 	PxRigidDynamic* m_CharacterCapsuleCollider = nullptr;
 
-	std::unique_ptr<DirectX::GamePad> m_GamePad;
+	//std::unique_ptr<DirectX::GamePad> m_GamePad;
+
+	void HandleMouseInput();
+
+
+	ID3D11Buffer* pCubemapVertexBuffer, * pCubemapIndexBuffer;
+	std::shared_ptr<DX11VertexShader> m_RectToCubeVertexShader = nullptr;
+	std::shared_ptr<DX11PixelShader> m_RectToCubePixelShader = nullptr;
+	std::shared_ptr<DX11VertexShader> m_CubemapVertexShader = nullptr;
+	std::shared_ptr<DX11PixelShader> m_CubemapPixelShader = nullptr;
+
+
+	void RenderCubeFromTheInsideInit();
+	void RenderCubeFromTheInside();
+	void CreateCubemapTexture(bool upsideDown, int width, int height);
+
+	void InitHDRCubemap(std::string path);
+	void RenderHDRCubemap();
+
+	ID3D11ShaderResourceView* m_HDRShaderResourceView = nullptr;
+	ID3D11DepthStencilState* m_CubemapDepthStencilState = nullptr;
+	ID3D11RasterizerState* m_CubemapRasterizerState = nullptr;
+	ID3D11Texture2D* m_CubemapTexture = nullptr;
+	ID3D11ShaderResourceView* m_CubemapShaderResourceView = nullptr;
+
+	// Postprocessing (FXAA)
+	std::shared_ptr<DX11PixelShader> m_PostprocessingPixelShader = nullptr;
+
+	RenderTexture* postprocessingRenderTexture = nullptr;
+	ID3D11ShaderResourceView* postprocessingSRV = nullptr;
+	ID3D11Texture2D* postprocessingTexture = nullptr;
+
+	void PostprocessingToTextureInit();
+	void PostprocessingToTextureBegin();
+	void PostprocessingToTextureEnd();
+
+	bool m_bFreeCameraView = false;
+
+	float aimPitch = 0.f;
+	glm::quat aimPitchRotation = glm::quat();
+
 };
 

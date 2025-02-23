@@ -123,6 +123,7 @@ struct __declspec(align(16)) LightCB
 	float bias;
 	glm::vec3 camPos;
 	int showDiffuseTexture;
+	glm::vec4 rcpFrame;
 	int numLights;
 	int enableGI;
 };
@@ -154,15 +155,23 @@ bool TestApplication::Init()
 	Model* model = new Model(prefix + "source/revolver_game.fbx", prefix + "textures/M_WP_Revolver_albedo.jpg", prefix + "textures/M_WP_Revolver_normal.png", prefix + "textures/M_WP_Revolver_roughness.jpg", prefix + "textures/M_WP_Revolver_metallic.jpg");
 	m_Models.emplace_back(model);
 	m_Models.emplace_back(new Model("..\\resources\\sponza\\glTF\\Sponza.gltf", "", "", "", ""));
+	//m_Models.emplace_back(new Model("..\\resources\\SunTemple_v4\\SunTemple.fbx", "", "", "", ""));
+	//m_Models.emplace_back(new Model("..\\resources\\classic_sponza\\Meshes\\Sponza_Modular.FBX", "", "", "", ""));
+	//m_Models.emplace_back(new Model("..\\resources\\sponza_pbr\\sponza.obj", "", "", "", ""));
 	//m_Models.emplace_back(new Model("..\\resources\\sponza-gltf-pbr\\sponza.glb", "", "", "", ""));
-	//models.emplace_back(new Model("E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\Bistro_v5_2\\BistroInterior.fbx", "", "", "", ""));
-
+	
 	m_AnimatedModel = new Model("../resources/mixamo/Walking_fixed.fbx", "../resources/mixamo/eve/SpacePirate_M_diffuse.png", "../resources/mixamo/eve/SpacePirate_M_normal.png", "", "");
+	
 	m_Models.emplace_back(m_AnimatedModel);
 	props.emplace_back(Properties());
 
 	m_RunAnimation = new Animation("../resources/mixamo/Running_fixed.fbx", m_AnimatedModel);
 	m_IdleAnimation = new Animation("../resources/mixamo/Pistol_Idle_fixed.fbx", m_AnimatedModel);
+	m_LeftTurnAnimation = new Animation("../resources/mixamo/Left_Turn_fixed.fbx", m_AnimatedModel);
+	m_RightTurnAnimation = new Animation("../resources/mixamo/Right_Turn_fixed.fbx", m_AnimatedModel);
+
+
+	//m_ShootingAnimation = new Animation("../resources/mixamo/Pistol_Shooting_fixed.fbx", m_AnimatedModel);
 
 	m_Animator = new Animator(m_IdleAnimation);
 
@@ -185,7 +194,7 @@ bool TestApplication::Init()
 	props[1].rotation[1] = 90.f;
 	m_Models[1]->GetUseCombinedTextures() = false;
 
-	props[2].scale[0] = props[2].scale[1] = props[2].scale[2] = 0.015f;
+	props[2].scale[0] = props[2].scale[1] = props[2].scale[2] = SPONZA_SCALE;
 
 	// for sponza
 	lightProps.lightPos[0] = { 0.f, 21.f, 0.f };
@@ -246,6 +255,22 @@ bool TestApplication::Init()
 
 	hr = m_DX11Device->CreateSamplerState(&sampDesc, &g_pSamplerLinear);
 
+	// for cubemapping
+	D3D11_RASTERIZER_DESC rdesc;
+	ZeroMemory(&rdesc, sizeof(rdesc));
+	rdesc.CullMode = D3D11_CULL_NONE;
+	rdesc.FillMode = D3D11_FILL_SOLID;
+	hr = m_DX11Device->CreateRasterizerState(&rdesc, &m_CubemapRasterizerState);
+	if (FAILED(hr)) std::cout << "Can't create RasterizerState!\n";
+
+	D3D11_DEPTH_STENCIL_DESC dsdesc;
+	ZeroMemory(&dsdesc, sizeof(dsdesc));
+	dsdesc.DepthEnable = true;
+	dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	hr = m_DX11Device->CreateDepthStencilState(&dsdesc, &m_CubemapDepthStencilState);
+	if (FAILED(hr)) std::cout << "Can't create DepthStencilState!\n";
+
+
 	FramebufferToTextureInit();
 
 
@@ -266,31 +291,39 @@ bool TestApplication::Init()
 	};
 
 
-	m_DefaultVertexShader = std::make_shared<DX11VertexShader>("src/DefaultVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
+	m_DefaultVertexShader = std::make_shared<DX11VertexShader>("src/shaders/DefaultVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
 
-	m_SpotLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/SpotLightDepthVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	//m_SpotLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/shaders/SpotLightDepthVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
 	//m_SpotLightDepthPixelShader = std::make_shared<DX11PixelShader>("src/SpotLightDepthPixelShader.hlsl");
 
-	m_SpotLightVertexShader = std::make_shared<DX11VertexShader>("src/SpotLightVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
-	m_SpotLightPixelShader = std::make_shared<DX11PixelShader>("src/SpotLightPixelShader.hlsl");
+	m_SpotLightVertexShader = std::make_shared<DX11VertexShader>("src/shaders/SpotLightVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	m_SpotLightPixelShader = std::make_shared<DX11PixelShader>("src/shaders/SpotLightPixelShader.hlsl");
 
-	m_PointLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/PointLightDepthVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
-	m_PointLightDepthPixelShader = std::make_shared<DX11PixelShader>("src/PointLightDepthPixelShader.hlsl");
-	m_PointLightDepthGeometryShader = std::make_shared<DX11GeometryShader>("src/PointLightDepthGeometryShader.hlsl");
+	m_PointLightDepthVertexShader = std::make_shared<DX11VertexShader>("src/shaders/PointLightDepthVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
+	m_PointLightDepthPixelShader = std::make_shared<DX11PixelShader>("src/shaders/PointLightDepthPixelShader.hlsl");
+	m_PointLightDepthGeometryShader = std::make_shared<DX11GeometryShader>("src/shaders/PointLightDepthGeometryShader.hlsl");
 
-	m_CubePixelShader = std::make_shared<DX11PixelShader>("src/CubePixelShader.hlsl");
+	m_CubePixelShader = std::make_shared<DX11PixelShader>("src/shaders/CubePixelShader.hlsl");
 
-	m_DeferredVertexShader = std::make_shared<DX11VertexShader>("src/DeferredVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
-	m_DeferredPixelShader = std::make_shared<DX11PixelShader>("src/DeferredPixelShader.hlsl");
+	m_DeferredVertexShader = std::make_shared<DX11VertexShader>("src/shaders/DeferredVertexShader.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
+	m_DeferredPixelShader = std::make_shared<DX11PixelShader>("src/shaders/DeferredPixelShader.hlsl");
 
-	m_DeferredCompositingVertexShader = std::make_shared<DX11VertexShader>("src/DeferredCompositingVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
-	m_DeferredCompositingPixelShader = std::make_shared<DX11PixelShader>("src/DeferredCompositingPixelShader.hlsl");
+	m_DeferredCompositingVertexShader = std::make_shared<DX11VertexShader>("src/shaders/DeferredCompositingVertexShader.hlsl", defaultShaderInputLayout, ARRAYSIZE(defaultShaderInputLayout));
+	m_DeferredCompositingPixelShader = std::make_shared<DX11PixelShader>("src/shaders/DeferredCompositingPixelShader.hlsl");
 
-	m_VoxelizationPixelShader = std::make_shared<DX11PixelShader>("src/VoxelizationPixelShader.hlsl");
+	m_VoxelizationPixelShader = std::make_shared<DX11PixelShader>("src/shaders/VoxelizationPixelShader.hlsl");
+
+	// for sky cubemapping
+	m_RectToCubeVertexShader = std::make_shared<DX11VertexShader>("src/shaders/RectToCubeShaders.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
+	m_RectToCubePixelShader = std::make_shared<DX11PixelShader>("src/shaders/RectToCubeShaders.hlsl");
+	m_CubemapVertexShader = std::make_shared<DX11VertexShader>("src/shaders/CubemapShaders.hlsl", skeletalAnimationInputLayout, ARRAYSIZE(skeletalAnimationInputLayout));
+	m_CubemapPixelShader = std::make_shared<DX11PixelShader>("src/shaders/CubemapShaders.hlsl");
+
+	// postprocessing (FXAA)
+	m_PostprocessingPixelShader = std::make_shared<DX11PixelShader>("src/shaders/PostprocessingPixelShader.hlsl");
 
 
-
-	SpotLightDepthToTextureInit();
+	//SpotLightDepthToTextureInit();
 	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 	{
 		m_PointLightDepthSRVs[i] = nullptr;
@@ -355,19 +388,23 @@ bool TestApplication::Init()
 	m_Cameras.emplace_back(Camera()); // for spotlight
 
 
-	gBuffer = new DX11GBuffer();
-	gBuffer->Initialize(texWidth, texHeight);
+	//gBuffer = new DX11GBuffer();
+	//gBuffer->Initialize(texWidth, texHeight);
 
 	NvidiaVXGIInit();
 	RenderCubeInit();
 	RenderQuadInit();
 
+	// for sky cubemapping
+	RenderCubeFromTheInsideInit();
+	InitHDRCubemap("../resources/hdrs/kloofendal_48d_partly_cloudy_puresky_4k.hdr");
+
 	initPhysics(true);
 
-	auto coltBounds = m_Models[0]->GetBounds();
-	std::cout << "Colt Python bounds: (" <<
-		coltBounds.lower.x << ", " << coltBounds.lower.y << ", " << coltBounds.lower.z
-		<< " | " << coltBounds.upper.x << ", " << coltBounds.upper.y << ", " << coltBounds.upper.z << ")\n";
+	//auto coltBounds = m_Models[0]->GetBounds();
+	//std::cout << "Colt Python bounds: (" <<
+	//	coltBounds.lower.x << ", " << coltBounds.lower.y << ", " << coltBounds.lower.z
+	//	<< " | " << coltBounds.upper.x << ", " << coltBounds.upper.y << ", " << coltBounds.upper.z << ")\n";
 
 
 	m_BoxAlbedo = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_diff_4k.png");
@@ -376,7 +413,9 @@ bool TestApplication::Init()
 
 	FMODInit();
 
-	m_GamePad = std::make_unique<GamePad>();
+	//m_GamePad = std::make_unique<GamePad>();
+
+	//PostprocessingToTextureInit();
 
 	return true;
 }
@@ -385,11 +424,15 @@ void TestApplication::RenderLoop()
 {
 	while (m_Running)
 	{
+		m_Window->OnUpdate();
+
 		float currentFrame = static_cast<float>(glfwGetTime());
 		m_DeltaTime = currentFrame - m_LastFrame;
 		m_LastFrame = currentFrame;
 
 		FMODUpdate();
+
+		HandleMouseInput();
 
 		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_W) == GLFW_PRESS)
 			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::FORWARD, m_DeltaTime);
@@ -401,40 +444,47 @@ void TestApplication::RenderLoop()
 			m_Cameras[SelectedCamera].ProcessKeyboard(CameraMovement::RIGHT, m_DeltaTime);
 
 		if (viewPortActive)
+		{
 			glfwSetInputMode(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+		}
 		else
+		{
 			glfwSetInputMode(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed)
-		{
-			auto glmPos = m_Cameras[0].GetPosition();
-			auto glmDir = m_Cameras[0].GetFrontVector();
-
-			PxTransform t;
-			t.p = PxVec3(glmPos.x, glmPos.y, glmPos.z);
-			t.q = PxQuat(PxIDENTITY::PxIdentity);
-
-			createDynamic(t, PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), PxVec3(glmDir.x, glmDir.y, glmDir.z) * 30);
-
-			FMOD::Channel* channel;
-			m_FmodSystem->playSound(m_WhooshSound, nullptr, false, &channel);
-
-			spacePressed = true;
+			//ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
 		}
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_RELEASE)
-			spacePressed = false;
 
-		if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_V) == GLFW_PRESS)
-		{
-			m_coltPhysicsActor->addTorque(PxVec3(300.f, 500.f, 0.f));
-		}
+
+		//if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_PRESS && !spacePressed)
+		//{
+		//	auto glmPos = m_Cameras[0].GetPosition();
+		//	auto glmDir = m_Cameras[0].GetFrontVector();
+
+		//	PxTransform t;
+		//	t.p = PxVec3(glmPos.x, glmPos.y, glmPos.z);
+		//	t.q = PxQuat(PxIDENTITY::PxIdentity);
+
+		//	createDynamic(t, PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), PxVec3(glmDir.x, glmDir.y, glmDir.z) * 30);
+
+		//	FMOD::Channel* channel;
+		//	m_FmodSystem->playSound(m_WhooshSound, nullptr, false, &channel);
+
+		//	spacePressed = true;
+		//}
+		//if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_SPACE) == GLFW_RELEASE)
+		//	spacePressed = false;
+
+		//if (glfwGetKey(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_KEY_V) == GLFW_PRESS)
+		//{
+		//	m_coltPhysicsActor->addTorque(PxVec3(300.f, 500.f, 0.f));
+		//}
 
 		// setting deafult camera properties
 		m_CameraViewMatrix = m_Cameras[SelectedCamera].GetViewMatrix();
 		m_CameraPos = m_Cameras[SelectedCamera].GetPosition();
 		m_CameraFrontVector = m_Cameras[SelectedCamera].GetFrontVector();
 
-		MoveCharacter(m_CameraViewMatrix, m_CameraPos, m_CameraFrontVector);
+		if (!m_bFreeCameraView)
+			MoveCharacter(m_CameraViewMatrix, m_CameraPos, m_CameraFrontVector);
 
 		//for (int i = 0; i < 48; i++)
 		//{
@@ -443,12 +493,17 @@ void TestApplication::RenderLoop()
 
 		//lightProps.lightPos[0][2] = glm::cos(glfwGetTime()/2.f) * 8.f;
 
-		m_Window->OnUpdate();
-
 		ImguiFrame();
 		SetupImguiDockspace();
 
-		ImGui::Begin("Properties");
+		int windowFlags = 0;
+
+		if (viewPortActive)
+			windowFlags |= ImGuiWindowFlags_NoInputs;
+		else
+			windowFlags &= ~ImGuiWindowFlags_NoInputs;
+
+		ImGui::Begin("Properties", nullptr, windowFlags);
 		ImGui::Checkbox("VSync", &m_bEnableVsync);
 		const char* items[]{ "Main Camera", "Light1", "Light2", "Light3", "SpotLight" };
 		if (ImGui::Combo("Camera", &SelectedCamera, items, 5))
@@ -545,6 +600,7 @@ void TestApplication::RenderLoop()
 
 		ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
 		ImGui::SliderFloat("CharacterCameraZoom", &m_FollowCharacterCameraZoom, 1.f, 5.f);
+		ImGui::Checkbox("FreeCameraView", &m_bFreeCameraView);
 
 		ImGui::End();
 
@@ -553,7 +609,7 @@ void TestApplication::RenderLoop()
 		m_Cameras[3].GetPosition() = lightProps.lightPos[2];
 
 
-		ImGui::Begin("Scene");
+		ImGui::Begin("Scene", nullptr, windowFlags);
 		if (ImGui::Button("New"))
 		{
 			openFile(modelPath);
@@ -594,7 +650,11 @@ void TestApplication::RenderLoop()
 		}
 		ImGui::End();
 
-		ImGui::Begin("Viewport");
+		ImGui::Begin("Status", nullptr, windowFlags);
+		ImGui::Text("FPS: %f\nMeshes drawn: %d/%d", 1.f/m_DeltaTime, m_DrawInfo.meshesDrawn, m_DrawInfo.totalMeshes);
+		ImGui::End();
+
+		ImGui::Begin("Viewport", nullptr, windowFlags);
 		ImVec2 vMin = ImGui::GetWindowContentRegionMin();
 		ImVec2 vMax = ImGui::GetWindowContentRegionMax();
 
@@ -612,6 +672,7 @@ void TestApplication::RenderLoop()
 		{
 			DX11RendererAPI::GetInstance()->SetViewport(vMin.x, vMin.y, texWidth, texHeight);
 			FramebufferToTextureInit();
+			//PostprocessingToTextureInit();
 			//gBuffer->Shutdown();
 			//if (!gBuffer->Initialize(texWidth, texHeight))
 			//	std::cout << "Failed to init gBuffer!\n";
@@ -664,13 +725,12 @@ void TestApplication::RenderLoop()
 
 		// rendering depth to render texture for spot light	
 		//m_DX11DeviceContext->OMSetDepthStencilState(m_pGBufferReverseZDepthStencilState, 0); // for reverse z buffer
-		SpotLightDepthToTextureBegin();
+	/*	SpotLightDepthToTextureBegin();
 		auto reverseProjMat = reverseZ(spotlightProjMat);
 		RenderScene(m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix(), spotlightProjMat, m_SpotLightDepthVertexShader, m_SpotLightDepthPixelShader, m_NullGeometryShader, false, nullptr, 0, false);
 		SpotLightDepthToTextureEnd();
-		m_DX11DeviceContext->OMSetDepthStencilState(nullptr, 0);
-
-		ResetRenderState();
+		m_DX11DeviceContext->OMSetDepthStencilState(nullptr, 0);*/
+		//ResetRenderState();
 
 		if (m_bEnableGI)
 		{
@@ -690,7 +750,7 @@ void TestApplication::RenderLoop()
 		//m_DeferredPixelShader->Unbind();
 
 		RenderToGBufferBegin();
-		if (m_MeshesDrawn > 0)
+		if (m_DrawInfo.meshesDrawn > 0)
 		{
 			for (int i = 0; i < NUM_POINT_LIGHTS; i++)
 			{
@@ -699,11 +759,12 @@ void TestApplication::RenderLoop()
 				auto scale = 0.1f;
 				modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
 				modelMat = glm::scale(modelMat, glm::vec3(scale, scale, scale));
-				RenderCube(modelMat);
+				RenderCube(modelMat, true);
 			}
 			renderPhysics(m_DeltaTime);
 			//RenderModelBounds(0);
 		}
+		RenderHDRCubemap();
 		RenderToGBufferEnd();
 
 		//std::cout << "Meshes drawn: " << m_MeshesDrawn << '\n';
@@ -723,7 +784,7 @@ void TestApplication::RenderLoop()
 		auto normalRoughnessSRV = gBuffer->GetShaderResourceView(1);
 		auto positionMetallicSRV = gBuffer->GetShaderResourceView(2);
 		auto depthSRV = rendererInterface->getSRVForTexture(rendererInterface->getHandleForTexture(gBuffer->GetDepthStencilTexture()));*/
-		if (m_MeshesDrawn > 0)
+		if (m_DrawInfo.meshesDrawn > 0)
 		{
 			if (m_bEnableGI)
 			{
@@ -792,8 +853,17 @@ void TestApplication::RenderLoop()
 			m_DeferredCompositingVertexShader->Unbind();
 			m_DeferredCompositingPixelShader->Unbind();
 			FramebufferToTextureEnd();
-		}
 
+			//PostprocessingToTextureBegin();
+			//m_DX11DeviceContext->PSSetShaderResources(0, 1, &frameSRV);
+			//m_DeferredCompositingVertexShader->Bind();
+			//m_PostprocessingPixelShader->Bind();
+			//m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+			//RenderQuad();
+			//m_DeferredCompositingVertexShader->Unbind();
+			//m_PostprocessingPixelShader->Unbind();
+			//PostprocessingToTextureEnd();
+		}
 
 		ImguiRender();
 
@@ -912,6 +982,18 @@ void TestApplication::Cleanup()
 
 	FMODCleanup();
 
+	SAFE_DELETE(m_Animator);
+	SAFE_DELETE(m_RunAnimation); 
+	SAFE_DELETE(m_IdleAnimation); 
+	SAFE_DELETE(m_ShootingAnimation); 
+
+
+	SAFE_RELEASE(m_HDRShaderResourceView);
+	SAFE_RELEASE(m_CubemapDepthStencilState); 
+	SAFE_RELEASE(m_CubemapRasterizerState);
+	SAFE_RELEASE(m_CubemapShaderResourceView);
+	SAFE_RELEASE(m_CubemapTexture); 
+
 	ImguiCleanup();
 	m_Renderer->Shutdown();
 	m_Window->OnClose();
@@ -943,36 +1025,26 @@ void TestApplication::OnMouseEvent(const Event<MouseEvents>& e)
 	{
 		auto mouseMovedEvent = e.ToType<MouseMovedEvent>();
 		//OV_INFO("Mouse Moved Event! Mouse Position: ({}, {})", mouseMovedEvent.x, mouseMovedEvent.y);
-
-		float xpos = static_cast<float>(mouseMovedEvent.x);
-		float ypos = static_cast<float>(mouseMovedEvent.y);
-
-		static bool firstMouse = true;
-		if (firstMouse)
-		{
-			lastX = xpos;
-			lastY = ypos;
-			firstMouse = false;
-		}
-
-		float xoffset = xpos - lastX;
-		float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
-
-		lastX = xpos;
-		lastY = ypos;
-
-		if (viewPortActive)
-		{
-			m_Cameras[SelectedCamera].ProcessMouseMovement(xoffset, yoffset);
-			Xoffset = xoffset;
-			Yoffset = yoffset;
-			mouseMoving = true;
-		}
 	}
 	else if (e.GetType() == MouseEvents::MouseButtonDown)
 	{
 		auto mouseButtonDownEvent = e.ToType<MouseButtonDownEvent>();
 		//OV_INFO("Mouse Button Down Event! Mouse Button Down: {}", mouseButtonDownEvent.button);
+		//if (mouseButtonDownEvent.button == 0)
+		//{
+		//	auto glmDir = glm::normalize(glm::quat(coltMat) * glm::vec3(0.f, 1.f, 0.f));
+		//	auto glmPos = props[2].translation + glmDir * 1.2f + glm::vec3(0.f, 2.f, 0.f);
+
+		//	PxTransform t;
+		//	t.p = PxVec3(glmPos.x, glmPos.y, glmPos.z);
+		//	t.q = PxQuat(PxIDENTITY::PxIdentity);
+
+		//	auto sphereRadius = 0.15f;
+		//	createDynamic(t, PxSphereGeometry(sphereRadius), 10000.f, PxVec3(glmDir.x, glmDir.y, glmDir.z) * 100);
+
+		//	//FMOD::Channel* channel;
+		//	//m_FmodSystem->playSound(m_WhooshSound, nullptr, false, &channel);
+		//}
 	}
 	else if (e.GetType() == MouseEvents::MouseButtonUp)
 	{
@@ -1059,93 +1131,93 @@ void TestApplication::ImguiCleanup()
 
 void TestApplication::SetupImGuiStyle()
 {
-	// Hazy Dark style by kaitabuchi314 from ImThemes
+	// Rest style by AaronBeardless from ImThemes
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	style.Alpha = 1.0f;
-	style.DisabledAlpha = 0.6000000238418579f;
-	style.WindowPadding = ImVec2(5.5f, 8.300000190734863f);
-	style.WindowRounding = 4.5f;
+	style.DisabledAlpha = 0.5f;
+	style.WindowPadding = ImVec2(13.0f, 10.0f);
+	style.WindowRounding = 0.0f;
 	style.WindowBorderSize = 1.0f;
 	style.WindowMinSize = ImVec2(32.0f, 32.0f);
-	style.WindowTitleAlign = ImVec2(0.0f, 0.5f);
-	style.WindowMenuButtonPosition = ImGuiDir_Left;
-	style.ChildRounding = 3.200000047683716f;
+	style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+	style.WindowMenuButtonPosition = ImGuiDir_Right;
+	style.ChildRounding = 3.0f;
 	style.ChildBorderSize = 1.0f;
-	style.PopupRounding = 2.700000047683716f;
+	style.PopupRounding = 5.0f;
 	style.PopupBorderSize = 1.0f;
-	style.FramePadding = ImVec2(4.0f, 3.0f);
-	style.FrameRounding = 2.400000095367432f;
+	style.FramePadding = ImVec2(20.0f, 8.100000381469727f);
+	style.FrameRounding = 2.0f;
 	style.FrameBorderSize = 0.0f;
-	style.ItemSpacing = ImVec2(8.0f, 4.0f);
-	style.ItemInnerSpacing = ImVec2(4.0f, 4.0f);
-	style.CellPadding = ImVec2(4.0f, 2.0f);
-	style.IndentSpacing = 21.0f;
-	style.ColumnsMinSpacing = 6.0f;
-	style.ScrollbarSize = 14.0f;
-	style.ScrollbarRounding = 9.0f;
-	style.GrabMinSize = 10.0f;
-	style.GrabRounding = 3.200000047683716f;
-	style.TabRounding = 3.5f;
-	style.TabBorderSize = 1.0f;
-	style.TabMinWidthForCloseButton = 0.0f;
+	style.ItemSpacing = ImVec2(3.0f, 3.0f);
+	style.ItemInnerSpacing = ImVec2(3.0f, 8.0f);
+	style.CellPadding = ImVec2(6.0f, 14.10000038146973f);
+	style.IndentSpacing = 0.0f;
+	style.ColumnsMinSpacing = 10.0f;
+	style.ScrollbarSize = 10.0f;
+	style.ScrollbarRounding = 2.0f;
+	style.GrabMinSize = 12.10000038146973f;
+	style.GrabRounding = 1.0f;
+	style.TabRounding = 2.0f;
+	style.TabBorderSize = 0.0f;
+	style.TabMinWidthForCloseButton = 5.0f;
 	style.ColorButtonPosition = ImGuiDir_Right;
 	style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
 	style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
 
-	style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	style.Colors[ImGuiCol_Text] = ImVec4(0.9803921580314636f, 0.9803921580314636f, 0.9803921580314636f, 1.0f);
 	style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.4980392158031464f, 0.4980392158031464f, 0.4980392158031464f, 1.0f);
-	style.Colors[ImGuiCol_WindowBg] = ImVec4(0.05882352963089943f, 0.05882352963089943f, 0.05882352963089943f, 0.9399999976158142f);
-	style.Colors[ImGuiCol_ChildBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-	style.Colors[ImGuiCol_PopupBg] = ImVec4(0.0784313753247261f, 0.0784313753247261f, 0.0784313753247261f, 0.9399999976158142f);
-	style.Colors[ImGuiCol_Border] = ImVec4(0.4274509847164154f, 0.4274509847164154f, 0.4980392158031464f, 0.5f);
+	style.Colors[ImGuiCol_WindowBg] = ImVec4(0.09411764889955521f, 0.09411764889955521f, 0.09411764889955521f, 1.0f);
+	style.Colors[ImGuiCol_ChildBg] = ImVec4(0.1568627506494522f, 0.1568627506494522f, 0.1568627506494522f, 1.0f);
+	style.Colors[ImGuiCol_PopupBg] = ImVec4(0.09411764889955521f, 0.09411764889955521f, 0.09411764889955521f, 1.0f);
+	style.Colors[ImGuiCol_Border] = ImVec4(1.0f, 1.0f, 1.0f, 0.09803921729326248f);
 	style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-	style.Colors[ImGuiCol_FrameBg] = ImVec4(0.1372549086809158f, 0.1725490242242813f, 0.2274509817361832f, 0.5400000214576721f);
-	style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(0.2117647081613541f, 0.2549019753932953f, 0.3019607961177826f, 0.4000000059604645f);
-	style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.04313725605607033f, 0.0470588244497776f, 0.0470588244497776f, 0.6700000166893005f);
-	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.03921568766236305f, 0.03921568766236305f, 0.03921568766236305f, 1.0f);
-	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.0784313753247261f, 0.08235294371843338f, 0.09019608050584793f, 1.0f);
-	style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.0f, 0.0f, 0.0f, 0.5099999904632568f);
-	style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.1372549086809158f, 0.1372549086809158f, 0.1372549086809158f, 1.0f);
-	style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.01960784383118153f, 0.01960784383118153f, 0.01960784383118153f, 0.5299999713897705f);
-	style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(0.3098039329051971f, 0.3098039329051971f, 0.3098039329051971f, 1.0f);
-	style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.407843142747879f, 0.407843142747879f, 0.407843142747879f, 1.0f);
-	style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.5098039507865906f, 0.5098039507865906f, 0.5098039507865906f, 1.0f);
-	style.Colors[ImGuiCol_CheckMark] = ImVec4(0.7176470756530762f, 0.7843137383460999f, 0.843137264251709f, 1.0f);
-	style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.47843137383461f, 0.5254902243614197f, 0.572549045085907f, 1.0f);
-	style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.2901960909366608f, 0.3176470696926117f, 0.3529411852359772f, 1.0f);
-	style.Colors[ImGuiCol_Button] = ImVec4(0.1490196138620377f, 0.1607843190431595f, 0.1764705926179886f, 0.4000000059604645f);
-	style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.1372549086809158f, 0.1450980454683304f, 0.1568627506494522f, 1.0f);
-	style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0784313753247261f, 0.08627451211214066f, 0.09019608050584793f, 1.0f);
-	style.Colors[ImGuiCol_Header] = ImVec4(0.196078434586525f, 0.2156862765550613f, 0.239215686917305f, 0.3100000023841858f);
-	style.Colors[ImGuiCol_HeaderHovered] = ImVec4(0.1647058874368668f, 0.1764705926179886f, 0.1921568661928177f, 0.800000011920929f);
-	style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.07450980693101883f, 0.08235294371843338f, 0.09019608050584793f, 1.0f);
-	style.Colors[ImGuiCol_Separator] = ImVec4(0.4274509847164154f, 0.4274509847164154f, 0.4980392158031464f, 0.5f);
-	style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(0.239215686917305f, 0.3254902064800262f, 0.4235294163227081f, 0.7799999713897705f);
-	style.Colors[ImGuiCol_SeparatorActive] = ImVec4(0.2745098173618317f, 0.3803921639919281f, 0.4980392158031464f, 1.0f);
-	style.Colors[ImGuiCol_ResizeGrip] = ImVec4(0.2901960909366608f, 0.3294117748737335f, 0.3764705955982208f, 0.2000000029802322f);
-	style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(0.239215686917305f, 0.2980392277240753f, 0.3686274588108063f, 0.6700000166893005f);
-	style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(0.1647058874368668f, 0.1764705926179886f, 0.1882352977991104f, 0.949999988079071f);
-	style.Colors[ImGuiCol_Tab] = ImVec4(0.1176470592617989f, 0.125490203499794f, 0.1333333402872086f, 0.8619999885559082f);
-	style.Colors[ImGuiCol_TabHovered] = ImVec4(0.3294117748737335f, 0.407843142747879f, 0.501960813999176f, 0.800000011920929f);
-	style.Colors[ImGuiCol_TabActive] = ImVec4(0.2431372553110123f, 0.2470588237047195f, 0.2549019753932953f, 1.0f);
-	style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.06666667014360428f, 0.1019607856869698f, 0.1450980454683304f, 0.9724000096321106f);
-	style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.1333333402872086f, 0.2588235437870026f, 0.4235294163227081f, 1.0f);
-	style.Colors[ImGuiCol_PlotLines] = ImVec4(0.6078431606292725f, 0.6078431606292725f, 0.6078431606292725f, 1.0f);
-	style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.0f, 0.4274509847164154f, 0.3490196168422699f, 1.0f);
-	style.Colors[ImGuiCol_PlotHistogram] = ImVec4(0.8980392217636108f, 0.6980392336845398f, 0.0f, 1.0f);
-	style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.0f, 0.6000000238418579f, 0.0f, 1.0f);
-	style.Colors[ImGuiCol_TableHeaderBg] = ImVec4(0.1882352977991104f, 0.1882352977991104f, 0.2000000029802322f, 1.0f);
-	style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(0.3098039329051971f, 0.3098039329051971f, 0.3490196168422699f, 1.0f);
-	style.Colors[ImGuiCol_TableBorderLight] = ImVec4(0.2274509817361832f, 0.2274509817361832f, 0.2470588237047195f, 1.0f);
+	style.Colors[ImGuiCol_FrameBg] = ImVec4(1.0f, 1.0f, 1.0f, 0.09803921729326248f);
+	style.Colors[ImGuiCol_FrameBgHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_FrameBgActive] = ImVec4(0.0f, 0.0f, 0.0f, 0.0470588244497776f);
+	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1176470592617989f, 0.1176470592617989f, 0.1176470592617989f, 1.0f);
+	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.1568627506494522f, 0.1568627506494522f, 0.1568627506494522f, 1.0f);
+	style.Colors[ImGuiCol_TitleBgCollapsed] = ImVec4(0.1176470592617989f, 0.1176470592617989f, 0.1176470592617989f, 1.0f);
+	style.Colors[ImGuiCol_MenuBarBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
+	style.Colors[ImGuiCol_ScrollbarBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.1098039224743843f);
+	style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4(1.0f, 1.0f, 1.0f, 0.3921568691730499f);
+	style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.4705882370471954f);
+	style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.0f, 0.0f, 0.0f, 0.09803921729326248f);
+	style.Colors[ImGuiCol_CheckMark] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	style.Colors[ImGuiCol_SliderGrab] = ImVec4(1.0f, 1.0f, 1.0f, 0.3921568691730499f);
+	style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.3137255012989044f);
+	style.Colors[ImGuiCol_Button] = ImVec4(1.0f, 1.0f, 1.0f, 0.09803921729326248f);
+	style.Colors[ImGuiCol_ButtonHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.0f, 0.0f, 0.0f, 0.0470588244497776f);
+	style.Colors[ImGuiCol_Header] = ImVec4(1.0f, 1.0f, 1.0f, 0.09803921729326248f);
+	style.Colors[ImGuiCol_HeaderHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_HeaderActive] = ImVec4(0.0f, 0.0f, 0.0f, 0.0470588244497776f);
+	style.Colors[ImGuiCol_Separator] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.2352941185235977f);
+	style.Colors[ImGuiCol_SeparatorActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.2352941185235977f);
+	style.Colors[ImGuiCol_ResizeGrip] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_ResizeGripHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.2352941185235977f);
+	style.Colors[ImGuiCol_ResizeGripActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.2352941185235977f);
+	style.Colors[ImGuiCol_Tab] = ImVec4(1.0f, 1.0f, 1.0f, 0.09803921729326248f);
+	style.Colors[ImGuiCol_TabHovered] = ImVec4(1.0f, 1.0f, 1.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_TabActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.3137255012989044f);
+	style.Colors[ImGuiCol_TabUnfocused] = ImVec4(0.0f, 0.0f, 0.0f, 0.1568627506494522f);
+	style.Colors[ImGuiCol_TabUnfocusedActive] = ImVec4(1.0f, 1.0f, 1.0f, 0.2352941185235977f);
+	style.Colors[ImGuiCol_PlotLines] = ImVec4(1.0f, 1.0f, 1.0f, 0.3529411852359772f);
+	style.Colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	style.Colors[ImGuiCol_PlotHistogram] = ImVec4(1.0f, 1.0f, 1.0f, 0.3529411852359772f);
+	style.Colors[ImGuiCol_PlotHistogramHovered] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	style.Colors[ImGuiCol_TableHeaderBg] = ImVec4(0.1568627506494522f, 0.1568627506494522f, 0.1568627506494522f, 1.0f);
+	style.Colors[ImGuiCol_TableBorderStrong] = ImVec4(1.0f, 1.0f, 1.0f, 0.3137255012989044f);
+	style.Colors[ImGuiCol_TableBorderLight] = ImVec4(1.0f, 1.0f, 1.0f, 0.196078434586525f);
 	style.Colors[ImGuiCol_TableRowBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.0f);
-	style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.05999999865889549f);
-	style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.2588235437870026f, 0.5882353186607361f, 0.9764705896377563f, 0.3499999940395355f);
-	style.Colors[ImGuiCol_DragDropTarget] = ImVec4(1.0f, 1.0f, 0.0f, 0.8999999761581421f);
-	style.Colors[ImGuiCol_NavHighlight] = ImVec4(0.2588235437870026f, 0.5882353186607361f, 0.9764705896377563f, 1.0f);
+	style.Colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.0f, 1.0f, 1.0f, 0.01960784383118153f);
+	style.Colors[ImGuiCol_TextSelectedBg] = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+	style.Colors[ImGuiCol_DragDropTarget] = ImVec4(0.168627455830574f, 0.2313725501298904f, 0.5372549295425415f, 1.0f);
+	style.Colors[ImGuiCol_NavHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
 	style.Colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.0f, 1.0f, 1.0f, 0.699999988079071f);
 	style.Colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.800000011920929f, 0.800000011920929f, 0.800000011920929f, 0.2000000029802322f);
-	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.800000011920929f, 0.800000011920929f, 0.800000011920929f, 0.3499999940395355f);
+	style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5647059082984924f);
 }
 
 void TestApplication::SetupImguiDockspace()
@@ -1154,6 +1226,11 @@ void TestApplication::SetupImguiDockspace()
 		| ImGuiWindowFlags_::ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_::ImGuiWindowFlags_NoCollapse
 		| ImGuiWindowFlags_::ImGuiWindowFlags_NoMove | ImGuiWindowFlags_::ImGuiWindowFlags_NoResize
 		| ImGuiWindowFlags_::ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_::ImGuiWindowFlags_NoNavFocus;
+
+	if (viewPortActive)
+		windowFlags |= ImGuiWindowFlags_NoInputs;
+	else
+		windowFlags &= ~ImGuiWindowFlags_NoInputs;
 
 	ImGui::SetNextWindowPos(ImVec2(0.f, 0.f), ImGuiCond_::ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImVec2(m_Window.get()->GetWidth(), m_Window.get()->GetHeight()), ImGuiCond_::ImGuiCond_Always);
@@ -1243,11 +1320,6 @@ void TestApplication::FramebufferToTextureEnd()
 	m_DX11DeviceContext->CopySubresourceRegion(frameTexture, D3D11CalcSubresource(0, 0, 1), 0, 0, 0, renderTexture->GetTexture(),
 		0, &sourceRegion);
 
-	// save texture to disc
-	//ScratchImage texture;
-	//CaptureTexture(g_pd3dDevice, g_pDeviceContext, frameTexture, texture);
-	//SaveToWICFile(*texture.GetImage(0, 0, 0), WIC_FLAGS_NONE, GetWICCodec(WIC_CODEC_PNG), L"NEW_IMAGE.PNG");
-
 	//delete renderTexture;
 	static_cast<DX11RendererAPI*>(RendererAPI::GetInstance().get())->ResetRenderTargetView();
 }
@@ -1326,38 +1398,37 @@ void TestApplication::SaveTextureToFile(ID3D11Texture2D* d3dTexture, const std::
 
 void TestApplication::RenderCubeInit()
 {
-	int boneIds[] = { 101, 101, 101, 101 };
 	Vertex vertices[] =
 	{
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f },
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f },
+		{ glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, 1.0f),	glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, -1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
-		{ glm::vec4(1.0f, -1.0f, -1.0f, 1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
-		{ glm::vec4(1.0f, 1.0f, -1.0f, 1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, 1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, -1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
 
-		{ glm::vec4(-1.0f, -1.0f, 1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
-		{ glm::vec4(1.0f, -1.0f, 1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
-		{ glm::vec4(1.0f, 1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
-		{ glm::vec4(-1.0f, 1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
 	};
 
 	D3D11_BUFFER_DESC bd;
@@ -1407,7 +1478,7 @@ void TestApplication::RenderCubeInit()
 	if (FAILED(hr)) return;
 }
 
-void TestApplication::RenderCube(const glm::mat4& modelMat)
+void TestApplication::RenderCube(const glm::mat4& modelMat, bool lightCube)
 {
 	UINT stride = sizeof(Vertex);
 	UINT offset = 0;
@@ -1429,7 +1500,7 @@ void TestApplication::RenderCube(const glm::mat4& modelMat)
 	MaterialCB matCb;
 	matCb.sponza = 0.f;
 	matCb.normalStrength = normalStrength;
-	matCb.renderLightCube = 1;
+	matCb.renderLightCube = (int)lightCube;
 
 	m_DX11DeviceContext->UpdateSubresource(g_pCBMaterial, 0, nullptr, &matCb, 0, 0);
 	m_DX11DeviceContext->PSSetConstantBuffers(2, 1, &g_pCBMaterial);
@@ -1521,6 +1592,7 @@ void TestApplication::RenderQuad()
 	lightCb.enableGI = m_bEnableGI;
 	lightCb.cubeProj = lightProjMat;
 	lightCb.lightViewProjMat = spotlightProjMat * m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
+	lightCb.rcpFrame = glm::vec4(1.0f/texWidth, 1.0f/texHeight, 0.0f, 0.0f);
 
 
 	m_DX11DeviceContext->UpdateSubresource(g_pCBLight, 0, NULL, &lightCb, 0, 0);
@@ -1728,7 +1800,7 @@ void TestApplication::NvidiaVXGIInit()
 	VXGI::IBlob* psBlob;
 	/*status = shaderCompiler->compileVoxelizationDefaultPixelShader(&psBlob);
 	if (status != 0) std::cout << "Something went wrong. Status: " << status << '\n';*/
-	std::ifstream t("src/VoxelizationPixelShader.hlsl");
+	std::ifstream t("src/shaders/VoxelizationPixelShader.hlsl");
 	std::stringstream psSource;
 	psSource << t.rdbuf();
 	VXGI::ShaderResources userShaderCodeResources = {};
@@ -2054,7 +2126,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		m_DX11DeviceContext->PSSetConstantBuffers(0, 1, &g_pCBLight);
 	}
 
-	m_MeshesDrawn = 0;
+	m_DrawInfo = {};
 	for (int i = 0; i < m_Models.size(); i++)
 	{
 		auto translate = props[i].translation;
@@ -2112,6 +2184,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 				glm::mat4 finalBoneMatrix = childFinalBoneMatrix * glm::inverse(boneMat);
 
 				cb.modelMat = characterMat * finalBoneMatrix * modelMat;
+				coltMat = cb.modelMat;
 			}
 		}
 
@@ -2167,17 +2240,19 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 		else
 			m_DX11DeviceContext->PSSetSamplers(1, 1, &g_pSamplerComparison);
 
-
+		DrawInfo drawInfo;
 		if (frustumCulling && i != 2)
 		{
 			Frustum frustum;
 			frustum.ConstructFrustum(viewMatrix, projMatrix, FAR_PLANE);
-			m_MeshesDrawn += m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, &frustum);
+			drawInfo = m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, &frustum);
 		}
 		else
 		{
-			m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, nullptr);
+			drawInfo = m_Models[i]->Draw(clippingBoxes, numBoxes, cb.modelMat, nullptr);
 		}
+		m_DrawInfo.meshesDrawn += drawInfo.meshesDrawn;
+		m_DrawInfo.totalMeshes += drawInfo.totalMeshes;
 	}
 }
 
@@ -2229,7 +2304,7 @@ void TestApplication::initPhysics(bool interactive)
 		createStack(PxTransform(PxVec3(0, 0, stackZ -= 5.0f)), 10, m_boxHalfExtent);
 
 	if (!interactive)
-		createDynamic(PxTransform(PxVec3(0, 40, 100)), PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), PxVec3(0, -50, -100));
+		createDynamic(PxTransform(PxVec3(0, 40, 100)), PxBoxGeometry(m_boxHalfExtent, m_boxHalfExtent, m_boxHalfExtent), 100.f, PxVec3(0, -50, -100));
 
 	// create pystol actor
 	PxTransform localTm(0, 5.f, 0);
@@ -2257,9 +2332,9 @@ void TestApplication::initPhysics(bool interactive)
 	}
 
 	m_CharacterCapsuleCollider = gPhysics->createRigidDynamic(localTm);
-	PxShape* feetShape = gPhysics->createShape(PxCapsuleGeometry(0.2f, 1.f), *gMaterial);
+	PxShape* feetShape = gPhysics->createShape(PxCapsuleGeometry(0.2f, 1.5f), *gMaterial);
 	m_CharacterCapsuleCollider->attachShape(*feetShape);
-	PxRigidBodyExt::updateMassAndInertia(*m_CharacterCapsuleCollider, 300.0f);
+	PxRigidBodyExt::updateMassAndInertia(*m_CharacterCapsuleCollider, 100.0f);
 	gScene->addActor(*m_CharacterCapsuleCollider);
 
 	PxRigidBodyExt::updateMassAndInertia(*m_coltPhysicsActor, 10.0f);
@@ -2284,6 +2359,8 @@ void TestApplication::cleanupPhysics()
 		PX_RELEASE(transport);
 	}
 	PX_RELEASE(gFoundation);
+	delete m_physXEventCallback;
+	delete m_physXFilterCallback;
 }
 
 void TestApplication::renderPhysics(float deltaTime)
@@ -2332,7 +2409,7 @@ void TestApplication::renderPhysics(float deltaTime)
 				m_BoxRoughness->Bind(2);
 
 				if (actor != m_coltPhysicsActor && actor != m_CharacterCapsuleCollider)
-					RenderCube(boxModelMat);
+					RenderCube(boxModelMat, false);
 			}
 		}
 		PxShape* shapes[128];
@@ -2341,16 +2418,17 @@ void TestApplication::renderPhysics(float deltaTime)
 		PxMat44 shapePose(PxShapeExt::getGlobalPose(*shapes[0], *m_coltPhysicsActor));
 
 		//shapePose.scale(PxVec4(5.f));
-		coltMat = *(glm::mat4*)&shapePose;
-		coltMat = glm::scale(coltMat, glm::vec3(10.f));
+		//coltMat = *(glm::mat4*)&shapePose;
+		//coltMat = glm::scale(coltMat, glm::vec3(10.f));
 
-		m_CharacterCapsuleCollider->setGlobalPose(PxTransform(PxVec3(props[2].translation.x, props[2].translation.y, props[2].translation.z)));
+		auto capsuleRotation = PxQuat(glm::radians(90.f), PxVec3(0.f, 0.f, 1.f));
+		m_CharacterCapsuleCollider->setGlobalPose(PxTransform(PxVec3(props[2].translation.x, props[2].translation.y, props[2].translation.z), capsuleRotation));
 	}
 }
 
-PxRigidDynamic* TestApplication::createDynamic(const PxTransform& t, const PxGeometry& geometry, const PxVec3& velocity)
+PxRigidDynamic* TestApplication::createDynamic(const PxTransform& t, const PxGeometry& geometry, float density, const PxVec3& velocity)
 {
-	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, geometry, *gMaterial, 100.0f);
+	PxRigidDynamic* dynamic = PxCreateDynamic(*gPhysics, t, geometry, *gMaterial, density);
 	dynamic->setAngularDamping(0.5f);
 	dynamic->setLinearVelocity(velocity);
 	gScene->addActor(*dynamic);
@@ -2379,14 +2457,96 @@ void TestApplication::createStack(const PxTransform& t, PxU32 size, PxReal halfE
 
 void TestApplication::RenderModelBounds(int modelIndex)
 {
-	auto modelBounds = m_Models[modelIndex]->GetMeshBounds();
-	for (auto& bound : modelBounds)
+	auto meshes = m_Models[modelIndex]->GetMeshes();
+	for (auto& mesh : meshes)
 	{
+		auto bound = mesh.GetBounds();
+
 		auto width = abs(bound.upper.x - bound.lower.x);
 		auto height = abs(bound.upper.y - bound.lower.y);
 		auto depth = abs(bound.upper.z - bound.lower.z);
 
+		printf("w: %f, h: %f, d: %f\n", width, height, depth);
+
 		auto lowerDimension = std::min({ width, height, depth });
+
+		ID3D11Buffer* pBoundVertexBuffer, * pBoundIndexBuffer;
+
+		Vertex vertices[] =
+		{
+			{ glm::vec3(-width, height, depth),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, height, depth),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, height, -depth),  glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},   
+			{ glm::vec3(-width, height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},  
+
+
+			{ glm::vec3(-width, -height, -depth), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, -height, -depth),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, -height, depth),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},  
+			{ glm::vec3(-width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+
+
+			{ glm::vec3(-width, height, depth),   glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(-width, height, -depth),  glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},  
+			{ glm::vec3(-width, -height, -depth), glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},    
+			{ glm::vec3(-width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+
+
+			{ glm::vec3(width, height, -depth),	 glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, height, depth),	 glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},   
+			{ glm::vec3(width, -height, depth),	 glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},    
+			{ glm::vec3(width, -height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+
+
+			{ glm::vec3(-width, height, -depth),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+			{ glm::vec3(width, height, -depth),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},   
+			{ glm::vec3(width, -height, -depth),  glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+			{ glm::vec3(-width, -height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+
+
+			{ glm::vec3(width, height, depth),   glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+			{ glm::vec3(-width, height, depth),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},  
+			{ glm::vec3(-width, -height, depth), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+			{ glm::vec3(width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		};
+
+		D3D11_BUFFER_DESC bd;
+		ZeroMemory(&bd, sizeof(bd));
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(Vertex) * 24;
+		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+		bd.CPUAccessFlags = 0;
+
+		D3D11_SUBRESOURCE_DATA InitData;
+		ZeroMemory(&InitData, sizeof(InitData));
+		InitData.pSysMem = vertices;
+
+		HRESULT hr = m_DX11Device->CreateBuffer(&bd, &InitData, &pBoundVertexBuffer);
+		if (FAILED(hr)) return;
+
+		UINT indices[] =
+		{
+			0, 1, 2, 3, 0,
+			4, 5, 6, 7, 4,
+
+			8, 9, 10, 11, 8,
+			12, 13, 14, 15, 12,
+
+			16, 17, 18, 19, 16,
+			20, 21, 22, 23, 20
+		};
+
+
+		bd.Usage = D3D11_USAGE_DEFAULT;
+		bd.ByteWidth = sizeof(UINT) * 30;
+		bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+		bd.CPUAccessFlags = 0;
+
+		InitData.pSysMem = indices;
+
+		hr = m_DX11Device->CreateBuffer(&bd, &InitData, &pBoundIndexBuffer);
+		if (FAILED(hr)) return;
+
 
 		auto modelMat = glm::mat4(1.f);
 
@@ -2394,18 +2554,44 @@ void TestApplication::RenderModelBounds(int modelIndex)
 		auto rotate = props[modelIndex].rotation;
 		auto scale = props[modelIndex].scale;
 
-		//modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
-		//modelMat = glm::rotate(modelMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
-		//modelMat = glm::rotate(modelMat, glm::radians(rotate[1]), glm::vec3(0.f, 1.f, 0.f));
-		//modelMat = glm::rotate(modelMat, glm::radians(rotate[2]), glm::vec3(0.f, 0.f, 1.f));
-		//modelMat = glm::scale(modelMat, glm::vec3(scale[0], scale[1], scale[2]));
+		modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
+		modelMat = glm::rotate(modelMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
+		modelMat = glm::rotate(modelMat, glm::radians(rotate[1]), glm::vec3(0.f, 1.f, 0.f));
+		modelMat = glm::rotate(modelMat, glm::radians(rotate[2]), glm::vec3(0.f, 0.f, 1.f));
+		modelMat = glm::scale(modelMat, glm::vec3(scale.x, scale.y, scale.z));
 
 		if (modelIndex == 0)
 			modelMat = coltMat;
 
-		modelMat = glm::scale(modelMat, glm::vec3(lowerDimension / height / 5.f, lowerDimension / width / 5.f, lowerDimension / depth / 5.f));
+		UINT stride = sizeof(Vertex);
+		UINT offset = 0;
 
-		RenderCube(modelMat);
+		m_DX11DeviceContext->IASetVertexBuffers(0, 1, &pBoundVertexBuffer, &stride, &offset);
+		m_DX11DeviceContext->IASetIndexBuffer(pBoundIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		m_DX11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP);
+
+
+		MatricesCB cb;
+		cb.modelMat = modelMat;
+		cb.viewMat = m_CameraViewMatrix;
+		cb.projMat = glm::perspectiveFovLH(XM_PIDIV4, (FLOAT)texWidth, (FLOAT)texHeight, NEAR_PLANE, FAR_PLANE);
+		cb.normalMat = glm::transpose(glm::inverse(modelMat));
+
+		m_DX11DeviceContext->UpdateSubresource(g_pCBMatrixes, 0, nullptr, &cb, 0, 0);
+		m_DX11DeviceContext->VSSetConstantBuffers(0, 1, &g_pCBMatrixes);
+
+		MaterialCB matCb;
+		matCb.sponza = 0.f;
+		matCb.normalStrength = normalStrength;
+		matCb.renderLightCube = 1;
+
+		m_DX11DeviceContext->UpdateSubresource(g_pCBMaterial, 0, nullptr, &matCb, 0, 0);
+		m_DX11DeviceContext->PSSetConstantBuffers(2, 1, &g_pCBMaterial);
+
+		m_DX11DeviceContext->DrawIndexed(30, 0, 0);
+
+		pBoundVertexBuffer->Release();
+		pBoundIndexBuffer->Release();
 	}
 }
 
@@ -2473,55 +2659,75 @@ void TestApplication::FMODUpdate()
 void TestApplication::FMODCleanup()
 {
 	m_FmodSystem->release();
+	m_WhooshSound->release();
+	m_BoxDrop1->release();
+	m_BoxDrop2->release();
+	m_BoxDrop3->release();
+	m_BoxDrop4->release();
 }
 
-float easeInQuart(float t) {
-	t *= t;
-	return t * t;
+const float kEpsilon = 0.000001f;
+
+bool IsEqualUsingDot(float dot)
+{
+	// Returns false in the presence of NaN values.
+	return dot > 1.0f - kEpsilon;
+}
+
+float QuaternionAngle(glm::quat a, glm::quat b)
+{
+	float dot = glm::min(glm::abs(glm::dot(a, b)), 1.0f);
+	return IsEqualUsingDot(dot) ? 0.0f : glm::acos(dot) * 2.0f;
 }
 
 glm::quat TestApplication::RotateTowards(const glm::quat& from, const glm::quat& to, float maxAngleDegrees)
 {
-	if (from == to)
-		return to;
-
 	glm::vec3 fromVector = from * glm::vec3(0.f, 0.f, 1.f);
 	glm::vec3 toVector = to * glm::vec3(0.f, 0.f, 1.f);
-
-	if (glm::length(fromVector) <= 0.0001)
-		return to;
-	else if (glm::length(toVector) <= 0.0001)
-		return from;
 
 	glm::vec3 fromDirection = glm::normalize(fromVector);
 	glm::vec3 toDirection = glm::normalize(toVector);
 
-	float angleRadians = glm::acos(glm::dot(fromDirection, toDirection));
+	//float angleRadians = glm::acos(glm::dot(fromDirection, toDirection));
+	float angleRadians = QuaternionAngle(from, to);
+
+	if (glm::degrees(angleRadians) == 0.f)
+		return to;
 
 	if (glm::degrees(angleRadians) <= 90.f)
 	{
-		maxAngleDegrees *= glm::degrees(angleRadians) / 180.f + 0.25f;
-		if (maxAngleDegrees <= 0.1f || maxAngleDegrees >= 360.f)
-			maxAngleDegrees = 0.1f;
+		maxAngleDegrees *= glm::clamp(glm::degrees(angleRadians) / 180.f);
+		/*if (maxAngleDegrees <= 0.1f || maxAngleDegrees >= 360.f)
+			maxAngleDegrees = 0.1f;*/
 	}
 
-	float angleDegrees = std::min(glm::degrees(angleRadians), maxAngleDegrees);
+	//float minAngleDegrees = glm::min(glm::degrees(angleRadians), maxAngleDegrees);
 
-	if (angleDegrees <= 0.1f || angleDegrees >= 360.f)
-		angleDegrees = 0.1f;
+	return glm::slerp(from, to, glm::min(1.0f, maxAngleDegrees / glm::degrees(angleRadians)));
 
-	glm::vec3 axis = glm::cross(fromDirection, toDirection);
 
-	glm::quat rotationIncrement = glm::angleAxis(glm::radians(angleDegrees), axis);
+	/*glm::vec3 axis = glm::cross(fromDirection, toDirection);*/
+	////if (axis.length() <= 0.001)
+	////	return from;
 
-	glm::vec3 result = rotationIncrement * fromDirection;
+	//glm::quat rotationIncrement = glm::angleAxis(glm::radians(minAngleDegrees), axis);
+	//if (glm::any(glm::isnan(rotationIncrement)))
+	//{
+	//	printf("rotationIncrement is NaN!\n");
+	//	return from;
+	//}
+	////	
 
-	float angle = glm::atan(result.x, result.z); // Note: I expected atan2(z,x) but OP reported success with atan2(x,z) instead! Switch around if you see 90° off.
-	float qx = 0;
-	float qy = 1 * glm::sin(angle / 2);
-	float qz = 0;
-	float qw = glm::cos(angle / 2);
-	return glm::quat(qw, qx, qy, qz);
+	/*glm::vec3 result = rotationIncrement * fromDirection;*/
+
+	//////printf("result length: %f\n", glm::length(result));
+
+	//float angle = glm::atan(result.x, result.z); // Note: I expected atan2(z,x) but OP reported success with atan2(x,z) instead! Switch around if you see 90° off.
+	//float qx = 0;
+	//float qy = 1 * glm::sin(angle / 2);
+	//float qz = 0;
+	//float qw = glm::cos(angle / 2);
+	//return glm::quat(qw, qx, qy, qz);
 }
 
 
@@ -2534,25 +2740,25 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 	static float yaw = 0.f;
 	static float pitch = 0.f;
 
-	auto pad = m_GamePad->GetState(0);
-	if (pad.IsConnected())
-	{
-		if (pad.IsViewPressed())
-		{
-			m_Running = false;
-		}
+	//auto pad = m_GamePad->GetState(0);
+	//if (pad.IsConnected())
+	//{
+	//	if (pad.IsViewPressed())
+	//	{
+	//		m_Running = false;
+	//	}
 
-		if (pad.IsRightStickPressed())
-		{
-			yaw = pitch = 0.f;
-		}
-		else
-		{
-			float ROTATION_GAIN = 4.f;
-			yaw += pad.thumbSticks.rightX * ROTATION_GAIN;
-			pitch -= pad.thumbSticks.rightY * ROTATION_GAIN;
-		}
-	}
+	//	if (pad.IsRightStickPressed())
+	//	{
+	//		yaw = pitch = 0.f;
+	//	}
+	//	else
+	//	{
+	//		float ROTATION_GAIN = 4.f;
+	//		yaw += pad.thumbSticks.rightX * ROTATION_GAIN;
+	//		pitch -= pad.thumbSticks.rightY * ROTATION_GAIN;
+	//	}
+	//}
 	if (mouseMoving)
 	{
 		yaw += Xoffset * m_DeltaTime * 5.f;
@@ -2561,32 +2767,36 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 
 	if (pitch >= 60.f)
 		pitch = 60.f;
-	else if (pitch <= -15.f)
-		pitch = -15.f;
-	yaw = glm::mod(yaw, 360.f);
+	else if (pitch <= -20.f)
+		pitch = -20.f;
+	if (yaw <= -360.f || yaw >= 360.f)
+		yaw = 0.f;
+	//yaw = glm::mod(yaw, 360.f);
 	//std::cout << "Yaw: " << yaw << '\n';
 	//std::cout << "Pitch: " << pitch << '\n';
-	mouseMoving = false;
 
+
+
+	auto quatPitch = glm::quat(glm::vec3(glm::radians(pitch), 0.f, 0.f));
 	auto quat = glm::quat(glm::vec3(glm::radians(pitch), glm::radians(yaw), 0.f));
 	auto quatYaw = glm::quat(glm::vec3(0.f, glm::radians(yaw), 0.f));
 	auto dir = quat * glm::vec3(0.f, 0.f, -5.f / m_FollowCharacterCameraZoom);
 	auto dirYaw = quatYaw * glm::vec3(0.f, 0.f, 5.f);
 	auto up = glm::vec3(0.f, 1.f, 0.f);
-	auto headPos = props[2].translation + glm::vec3(0.f, 1.5f, 0.f);
-	auto eye3 = dir + headPos;
-	eye = eye3;
+
+	auto headPos = props[2].translation + glm::vec3(0.f, 1.75f, 0.f);
+	eye = dir + headPos - glm::normalize(glm::cross(dirYaw, up)) * 0.75f;
 
 	//transform.rotation = quatYaw;
 	transform.position = props[2].translation;
 
 	// set default camera properties
-	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos, glm::vec3(0.f, 1.f, 0.f));
+	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos - glm::normalize(glm::cross(dirYaw, up)) * 0.75f, glm::vec3(0.f, 1.f, 0.f));
 	cameraPos = glm::vec3(eye);
-	cameraFrontVector = transform.position - cameraPos;
+	cameraFrontVector = glm::normalize(headPos - glm::normalize(glm::cross(dirYaw, up)) * 0.75f - cameraPos);
 
 	float moveSpeed = 5.f;
-	float rotSpeed = 1600.f * m_DeltaTime;
+	float rotSpeed = 1000.f * m_DeltaTime;
 
 	glm::vec3 velocityVector = glm::vec3(0.f);
 	float verticalAxis = 0.f;
@@ -2617,6 +2827,11 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 		horizontalAxis = 1.f;
 		bWalking = true;
 	}
+	if (glfwGetMouseButton(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_MOUSE_BUTTON_2) == GLFW_PRESS)
+		rightMouseButtonPressing = true;
+	else if (glfwGetMouseButton(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_MOUSE_BUTTON_2) == GLFW_RELEASE)
+		rightMouseButtonPressing = false;
+
 
 	float movementSpeed = 5.f;
 
@@ -2632,37 +2847,56 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 	glm::vec3 velocity = glm::vec3(0.f);
 
 	auto planarDirection = glm::vec3(0.f, glm::radians(yaw), 0.f);
-	if (glm::length(moveInput) >= std::numeric_limits<float>().min() && glm::length(planarDirection) >= std::numeric_limits<float>().min())
+	if (glm::length(moveInput) > 0.f)
 	{
 		moveInput = glm::normalize(moveInput);
 		auto moveDir = glm::normalize(glm::quat(planarDirection) * moveInput);
 
-		velocity = moveDir;
+		//velocity = moveDir;
 
 		if (moveAmount > 0.f)
 			targetRotation = glm::quatLookAtLH(moveDir, glm::vec3(0.f, 1.f, 0.f));
 	}
 
+	if (rightMouseButtonPressing)
+	{
+		auto direction = glm::vec3(0.f, glm::radians(yaw), 0.f);
+		targetRotation = glm::quat(direction);
+	}
 
 	if (targetRotation != transform.rotation)
+	{
 		transform.rotation = RotateTowards(transform.rotation, targetRotation, rotSpeed);
+	}
+	if (glm::length(moveInput) > 0.f)
+		velocity = glm::normalize(transform.rotation * glm::vec3(0.f, 0.f, 1.f));
+
+
+	// limit character to bounds of sponza
+	//transform.position.x += velocity.x * m_DeltaTime * moveSpeed;
+	//if (transform.position.z > 22.364f || transform.position.z < -20.271f || transform.position.x > 8.761f || transform.position.x < -9.821f)
+	//	transform.position.x -= velocity.x * m_DeltaTime * moveSpeed;
+
+	//transform.position.z += velocity.z * m_DeltaTime * moveSpeed;
+	//if (transform.position.z > 22.364f || transform.position.z < -20.271f || transform.position.x > 8.761f || transform.position.x < -9.821f)
+	//	transform.position.z -= velocity.z * m_DeltaTime * moveSpeed;
 
 	transform.position += velocity * m_DeltaTime * moveSpeed;
 
 
 
-	if (pad.thumbSticks.leftY != 0.f)
-	{
-		transform.position += pad.thumbSticks.leftY * glm::normalize(dirYaw) * m_DeltaTime * moveSpeed;
-		bWalking = true;
-	}
-	if (pad.thumbSticks.leftX != 0.f)
-	{
-		transform.position += -pad.thumbSticks.leftX * glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * moveSpeed;
-		transform.rotation = glm::quat(glm::vec3(0.f, glm::radians(yaw + 90.f * pad.thumbSticks.leftX), 0.f));
+	//if (pad.thumbSticks.leftY != 0.f)
+	//{
+	//	transform.position += pad.thumbSticks.leftY * glm::normalize(dirYaw) * m_DeltaTime * moveSpeed;
+	//	bWalking = true;
+	//}
+	//if (pad.thumbSticks.leftX != 0.f)
+	//{
+	//	transform.position += -pad.thumbSticks.leftX * glm::normalize(glm::cross(dirYaw, up)) * m_DeltaTime * moveSpeed;
+	//	transform.rotation = glm::quat(glm::vec3(0.f, glm::radians(yaw + 90.f * pad.thumbSticks.leftX), 0.f));
 
-		bWalking = true;
-	}
+	//	bWalking = true;
+	//}
 
 	auto eulerRotation = glm::eulerAngles(transform.rotation);
 	props[2].rotation.x = glm::degrees(eulerRotation.x);
@@ -2687,8 +2921,383 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 			if (m_IdleRunBlendFactor > 1.f)
 				m_IdleRunBlendFactor = 1.f;
 		}
-		m_Animator->BlendTwoAnimations(m_IdleAnimation, m_RunAnimation, m_IdleRunBlendFactor, m_DeltaTime); // 30.0f intentional here, otherwise they play too slowly
+
+		aimPitch = glm::degrees(2 * XM_PI - glm::eulerAngles(quatPitch).x);
+
+		glm::quat targetPitchAimRotation = aimPitchRotation;
+
+		targetPitchAimRotation = quatPitch;
+
+		aimPitchRotation = RotateTowards(aimPitchRotation, targetPitchAimRotation, rotSpeed);
+
+
+		m_Animator->BlendTwoAnimations(m_IdleAnimation, m_RunAnimation, m_IdleRunBlendFactor, m_DeltaTime);
+		//else if (rightMouseButtonPressing)
+		//{
+		//	m_Animator->BlendTwoAnimationsPerBone(m_IdleAnimation, m_IdleAnimation, "mixamorig:Spine1", m_DeltaTime, yaw, glm::degrees(glm::eulerAngles(aimPitchRotation).x), glm::axis(aimPitchRotation) * glm::quat(glm::vec3(0.f, glm::radians(-30.f), 0.f)));
+		//}
 	}
+}
+
+void TestApplication::HandleMouseInput()
+{
+	double xpos;
+	double ypos;
+	glfwGetCursorPos(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), &xpos, &ypos);
+
+	static bool firstMouse = true;
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
+
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+
+	if (viewPortActive)
+	{
+		m_Cameras[SelectedCamera].ProcessMouseMovement(xoffset, yoffset);
+
+		Xoffset = xoffset;
+		Yoffset = yoffset;
+
+		if (xpos == lastX && ypos == lastY)
+			mouseMoving = false;
+		else
+			mouseMoving = true;
+	}
+
+	lastX = xpos;
+	lastY = ypos;
+}
+
+void TestApplication::RenderCubeFromTheInsideInit()
+{
+	Vertex vertices[] =
+	{
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, -1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
+
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+
+		{ glm::vec3(1.0f, -1.0f, 1.0f),	glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, -1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),	glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+
+		{ glm::vec3(-1.0f, -1.0f, -1.0f), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, -1.0f),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, -1.0f),	glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, -1.0f),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
+
+		{ glm::vec3(-1.0f, -1.0f, 1.0f),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, -1.0f, 1.0f),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(1.0f, 1.0f, 1.0f),    glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+		{ glm::vec3(-1.0f, 1.0f, 1.0f),   glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
+	};
+
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(Vertex) * 24;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA InitData;
+	ZeroMemory(&InitData, sizeof(InitData));
+	InitData.pSysMem = vertices;
+
+	HRESULT hr = m_DX11Device->CreateBuffer(&bd, &InitData, &pCubemapVertexBuffer);
+	if (FAILED(hr)) return;
+
+	UINT indices[] =
+	{
+		0,1,3,
+		3,1,2,
+
+		5,4,6,
+		6,4,7,
+
+		8,9,11,
+		11,9,10,
+
+		13,12,14,
+		14,12,15,
+
+		16,17,19,
+		19,17,18,
+
+		21,20,22,
+		22,20,23
+	};
+
+
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(UINT) * 36;
+	bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	bd.CPUAccessFlags = 0;
+
+	InitData.pSysMem = indices;
+
+	hr = m_DX11Device->CreateBuffer(&bd, &InitData, &pCubemapIndexBuffer);
+	if (FAILED(hr)) return;	
+}
+
+void TestApplication::RenderCubeFromTheInside()
+{
+	UINT stride = sizeof(Vertex);
+	UINT offset = 0;
+
+	m_DX11DeviceContext->IASetVertexBuffers(0, 1, &pCubemapVertexBuffer, &stride, &offset);
+	m_DX11DeviceContext->IASetIndexBuffer(pCubemapIndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+	m_DX11DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	m_DX11DeviceContext->DrawIndexed(36, 0, 0);
+}
+
+void TestApplication::CreateCubemapTexture(bool upsideDown, int width, int height)
+{
+	glm::vec3 vectors[] =
+	{
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f),
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f),
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f,  -1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  -1.0f),
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f, 1.0f,  0.0f), glm::vec3(0.0f,  0.0f, 1.0f),
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f),
+		glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f)
+	};
+
+	if (upsideDown)
+	{
+		vectors[1] = glm::vec3(1.0f, 0.0f, 0.0f);	vectors[2] = glm::vec3(0.0f, 1.0f, 0.0f);
+		vectors[4] = glm::vec3(-1.0f, 0.0f, 0.0f);	vectors[5] = glm::vec3(0.0f, 1.0f, 0.0f);
+		vectors[7] = glm::vec3(0.0f, 1.0f, 0.0f);	vectors[8] = glm::vec3(0.0f, 0.0f, -1.0f);
+		vectors[10] = glm::vec3(0.0f, -1.0f, 0.0f);	vectors[11] = glm::vec3(0.0f, 0.0f, 1.0f);
+		vectors[13] = glm::vec3(0.0f, 0.0f, 1.0f);	vectors[14] = glm::vec3(0.0f, 1.0f, 0.0f);
+		vectors[16] = glm::vec3(0.0f, 0.0f, -1.0f);	vectors[17] = glm::vec3(0.0f, 1.0f, 0.0f);
+	}
+
+	glm::mat4 captureViews[] =
+	{
+		glm::lookAtLH(vectors[0], vectors[1], vectors[2]),
+		glm::lookAtLH(vectors[3], vectors[4], vectors[5]),
+		glm::lookAtLH(vectors[6], vectors[7], vectors[8]),
+		glm::lookAtLH(vectors[9], vectors[10], vectors[11]),
+		glm::lookAtLH(vectors[12], vectors[13], vectors[14]),
+		glm::lookAtLH(vectors[15], vectors[16], vectors[17])
+	};
+
+	m_DX11DeviceContext->OMSetDepthStencilState(m_CubemapDepthStencilState, 1);
+	m_DX11DeviceContext->RSSetState(m_CubemapRasterizerState);
+
+	std::vector<RenderTexture*> cubeFaces;
+
+	// Create faces
+	for (int i = 0; i < 6; ++i)
+	{
+		RenderTexture* renderTexture = new RenderTexture;
+		renderTexture->Initialize(width, height, 1, DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R16G16B16A16_FLOAT, false);
+		cubeFaces.push_back(renderTexture);
+	}
+
+	for (int i = 0; i < 6; i++)
+	{
+		RenderTexture* texture = cubeFaces[i];
+		// clear		
+		m_Renderer->OnWindowResize(width, height);
+		texture->SetRenderTarget(false);
+		texture->ClearRenderTarget(0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+
+		// prepare
+		MatricesCB matricesCb;
+		matricesCb.viewMat = captureViews[i];
+		matricesCb.projMat = glm::perspectiveFovLH(glm::radians(90.f), (float)width, (float)height, NEAR_PLANE, FAR_PLANE);
+		matricesCb.modelMat = glm::mat4(1.f);
+
+		m_DX11DeviceContext->UpdateSubresource(g_pCBMatrixes, 0, nullptr, &matricesCb, 0, 0);
+
+		m_DX11DeviceContext->VSSetConstantBuffers(0, 1, &g_pCBMatrixes);
+		m_DX11DeviceContext->PSSetConstantBuffers(0, 1, &g_pCBMatrixes);
+		m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+
+		// draw cube
+		RenderCubeFromTheInside();
+
+		m_Renderer->EndScene(true);
+	}
+
+	D3D11_TEXTURE2D_DESC texDesc;
+	texDesc.Width = width;
+	texDesc.Height = height;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 6;
+	texDesc.Format = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = D3D11_RESOURCE_MISC_TEXTURECUBE;
+
+	HRESULT result = m_DX11Device->CreateTexture2D(&texDesc, nullptr, &m_CubemapTexture);
+	if (FAILED(result)) return;
+
+	D3D11_BOX sourceRegion;
+	for (int i = 0; i < 6; ++i)
+	{
+		RenderTexture* texture = cubeFaces[i];
+
+		sourceRegion.left = 0;
+		sourceRegion.right = width;
+		sourceRegion.top = 0;
+		sourceRegion.bottom = height;
+		sourceRegion.front = 0;
+		sourceRegion.back = 1;
+
+		m_DX11DeviceContext->CopySubresourceRegion(m_CubemapTexture, D3D11CalcSubresource(0, i, 1), 0, 0, 0, texture->GetTexture(),
+			0, &sourceRegion);
+	}
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	srvDesc.Format = texDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+	srvDesc.TextureCube.MipLevels = texDesc.MipLevels;
+	srvDesc.TextureCube.MostDetailedMip = 0;
+
+	result = m_DX11Device->CreateShaderResourceView(m_CubemapTexture, &srvDesc, &m_CubemapShaderResourceView);
+	if (FAILED(result)) return;
+
+	for (RenderTexture* cubeFace : cubeFaces)
+		delete cubeFace;
+
+	m_DX11DeviceContext->OMSetDepthStencilState(nullptr, 0);
+	m_DX11DeviceContext->RSSetState(nullptr);
+	((DX11RendererAPI*)RendererAPI::GetInstance().get())->ResetRenderTargetView();
+	RECT rect;
+	GetClientRect(((WindowsWindow*)m_Window.get())->GetHWND(), &rect);
+	RendererAPI::GetInstance()->OnWindowResize(rect.right - rect.left, rect.bottom - rect.top);
+}
+
+void TestApplication::InitHDRCubemap(std::string path)
+{
+	HRESULT hr;
+	auto image = std::make_unique<ScratchImage>();
+	std::wstring wPath{ path.begin(), path.end() };
+	hr = LoadFromHDRFile(wPath.c_str(), nullptr, *image);
+	if (FAILED(hr))
+	{
+		std::cout << "Can't load HDR texture\n";
+		return;
+	}
+
+	hr = CreateShaderResourceView(m_DX11Device, (*image).GetImages(), (*image).GetImageCount(),
+		(*image).GetMetadata(), &m_HDRShaderResourceView);
+	if (FAILED(hr))
+	{
+		std::cout << "Can't create SRV from HDR texture\n";
+		return;
+	}
+
+	m_RectToCubeVertexShader->Bind();
+	m_RectToCubePixelShader->Bind();
+	m_DX11DeviceContext->PSSetShaderResources(0, 1, &m_HDRShaderResourceView);
+	CreateCubemapTexture(false, 1024, 1024);
+}
+
+void TestApplication::RenderHDRCubemap()
+{
+	MatricesCB cb;
+	cb.modelMat = glm::mat4(1.f);
+	cb.viewMat = m_CameraViewMatrix;
+	cb.projMat = glm::perspectiveFovLH(XM_PIDIV4, (float)texWidth, (float)texHeight, NEAR_PLANE, FAR_PLANE);
+
+	m_DX11DeviceContext->UpdateSubresource(g_pCBMatrixes, 0, NULL, &cb, 0, 0);
+	m_DX11DeviceContext->VSSetConstantBuffers(0, 1, &g_pCBMatrixes);
+	m_DX11DeviceContext->PSSetConstantBuffers(0, 1, &g_pCBMatrixes);
+	m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+
+	m_CubemapVertexShader->Bind();
+	m_CubemapPixelShader->Bind();
+	m_DX11DeviceContext->PSSetShaderResources(0, 1, &m_CubemapShaderResourceView);
+
+	m_DX11DeviceContext->OMSetDepthStencilState(m_CubemapDepthStencilState, 0);
+	m_DX11DeviceContext->RSSetState(m_CubemapRasterizerState);
+
+	RenderCubeFromTheInside();
+
+	m_DX11DeviceContext->OMSetDepthStencilState(0, 0);
+	m_DX11DeviceContext->RSSetState(nullptr);
+}
+
+void TestApplication::PostprocessingToTextureInit()
+{
+	if (postprocessingSRV) postprocessingSRV->Release();
+	if (postprocessingTexture) postprocessingTexture->Release();
+
+	D3D11_TEXTURE2D_DESC texDesc;
+	ZeroMemory(&texDesc, sizeof(texDesc));
+	texDesc.Width = texWidth;
+	texDesc.Height = texHeight;
+	texDesc.MipLevels = 1;
+	texDesc.ArraySize = 1;
+	texDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	texDesc.SampleDesc.Count = 1;
+	texDesc.SampleDesc.Quality = 0;
+	texDesc.Usage = D3D11_USAGE_DEFAULT;
+	texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+	texDesc.CPUAccessFlags = 0;
+	texDesc.MiscFlags = 0;
+
+	HRESULT result = m_DX11Device->CreateTexture2D(&texDesc, nullptr, &postprocessingTexture);
+	if (FAILED(result)) return;
+
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+	ZeroMemory(&srvDesc, sizeof(srvDesc));
+	srvDesc.Format = texDesc.Format;
+	srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = texDesc.MipLevels;
+	srvDesc.Texture2D.MostDetailedMip = 0;
+
+	result = m_DX11Device->CreateShaderResourceView(postprocessingTexture, &srvDesc, &postprocessingSRV);
+	if (FAILED(result)) return;
+
+	if (postprocessingRenderTexture) delete postprocessingRenderTexture;
+	postprocessingRenderTexture = new RenderTexture;
+	postprocessingRenderTexture->Initialize(texWidth, texHeight, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R32G32B32A32_FLOAT, false);
+}
+
+void TestApplication::PostprocessingToTextureBegin()
+{
+	DX11RendererAPI::GetInstance()->SetViewport(vRegionMinX, vRegionMinY, texWidth, texHeight);
+	postprocessingRenderTexture->SetRenderTarget(false);
+	postprocessingRenderTexture->ClearRenderTarget(0.01f, 0.01f, 0.01f, 1.f, 1.f);
+}
+
+void TestApplication::PostprocessingToTextureEnd()
+{
+	D3D11_BOX sourceRegion;
+	sourceRegion.left = 0;
+	sourceRegion.right = texWidth;
+	sourceRegion.top = 0;
+	sourceRegion.bottom = texHeight;
+	sourceRegion.front = 0;
+	sourceRegion.back = 1;
+
+	m_DX11DeviceContext->CopySubresourceRegion(postprocessingTexture, D3D11CalcSubresource(0, 0, 1), 0, 0, 0, postprocessingRenderTexture->GetTexture(),
+		0, &sourceRegion);
+
+	static_cast<DX11RendererAPI*>(RendererAPI::GetInstance().get())->ResetRenderTargetView();
 }
 
 void TestApplication::PhysXEventCallback::onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)
@@ -2705,7 +3314,7 @@ void TestApplication::PhysXEventCallback::onSleep(PxActor** actors, PxU32 count)
 
 void TestApplication::PhysXEventCallback::onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs)
 {
-	for (physx::PxU32 i = 0; i < nbPairs; i++)
+	/*for (physx::PxU32 i = 0; i < nbPairs; i++)
 	{
 		const physx::PxContactPair& cp = pairs[i];
 
@@ -2732,7 +3341,7 @@ void TestApplication::PhysXEventCallback::onContact(const PxContactPairHeader& p
 				break;
 			}
 		}
-	}
+	}*/
 }
 
 void TestApplication::PhysXEventCallback::onTrigger(PxTriggerPair* pairs, PxU32 count)

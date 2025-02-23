@@ -11,7 +11,7 @@
 #include "AnimData.h"
 #include "Model.h"
 
-namespace Oeuvre 
+namespace Oeuvre
 {
 	struct AssimpNodeData
 	{
@@ -59,6 +59,22 @@ namespace Oeuvre
 			else return &(*iter);
 		}
 
+		AssimpNodeData* FindNode(AssimpNodeData* parentNode, const std::string nodeName)
+		{
+			if (parentNode == nullptr) return nullptr;
+			if (nodeName == parentNode->name) {
+				return parentNode;
+			}
+
+			AssimpNodeData* result = nullptr;
+			for (int i = 0; i < parentNode->childrenCount; i++)
+			{
+				result = FindNode(&parentNode->children[i], nodeName);
+				if (result != nullptr)
+					break;
+			}
+			return result;
+		}
 
 		inline float GetTicksPerSecond() { return m_TicksPerSecond; }
 		inline float GetDuration() { return m_Duration; }

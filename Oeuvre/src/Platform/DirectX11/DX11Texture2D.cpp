@@ -29,7 +29,7 @@ namespace Oeuvre
     {
         if (m_ShaderResourceView) m_ShaderResourceView->Release();
         if (m_Texture2D) m_Texture2D->Release();
-        std::cout << "Texture2D destructor worked\n";
+        //std::cout << "Texture2D destructor worked\n";
     }
 
     DX11Texture2D::DX11Texture2D(const TextureSpecification& specification)
