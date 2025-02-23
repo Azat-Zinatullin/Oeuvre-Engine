@@ -159,18 +159,16 @@ bool TestApplication::Init()
 	//m_Models.emplace_back(new Model("..\\resources\\classic_sponza\\Meshes\\Sponza_Modular.FBX", "", "", "", ""));
 	//m_Models.emplace_back(new Model("..\\resources\\sponza_pbr\\sponza.obj", "", "", "", ""));
 	//m_Models.emplace_back(new Model("..\\resources\\sponza-gltf-pbr\\sponza.glb", "", "", "", ""));
-	
+
 	m_AnimatedModel = new Model("../resources/mixamo/Walking_fixed.fbx", "../resources/mixamo/eve/SpacePirate_M_diffuse.png", "../resources/mixamo/eve/SpacePirate_M_normal.png", "", "");
-	
+
 	m_Models.emplace_back(m_AnimatedModel);
-	props.emplace_back(Properties());
+	m_ModelProps.emplace_back(Properties());
 
 	m_RunAnimation = new Animation("../resources/mixamo/Running_fixed.fbx", m_AnimatedModel);
 	m_IdleAnimation = new Animation("../resources/mixamo/Pistol_Idle_fixed.fbx", m_AnimatedModel);
 	m_LeftTurnAnimation = new Animation("../resources/mixamo/Left_Turn_fixed.fbx", m_AnimatedModel);
 	m_RightTurnAnimation = new Animation("../resources/mixamo/Right_Turn_fixed.fbx", m_AnimatedModel);
-
-
 	//m_ShootingAnimation = new Animation("../resources/mixamo/Pistol_Shooting_fixed.fbx", m_AnimatedModel);
 
 	m_Animator = new Animator(m_IdleAnimation);
@@ -184,92 +182,25 @@ bool TestApplication::Init()
 	//_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDOUT);
 	//_CrtDumpMemoryLeaks();
 
-	props.emplace_back(Properties());
-	props.emplace_back(Properties());
+	m_ModelProps.emplace_back(Properties());
+	m_ModelProps.emplace_back(Properties());
 
-	props[0].scale[0] = props[0].scale[1] = props[0].scale[2] = 5.f;
-	props[0].translation[1] = props[0].translation[0] = 2.5f;
-	props[0].rotation[0] = -90.f;
-	props[1].scale[0] = props[1].scale[1] = props[1].scale[2] = SPONZA_SCALE;
-	props[1].rotation[1] = 90.f;
+	m_ModelProps[0].scale[0] = m_ModelProps[0].scale[1] = m_ModelProps[0].scale[2] = 5.f;
+	m_ModelProps[0].translation[1] = m_ModelProps[0].translation[0] = 2.5f;
+	m_ModelProps[0].rotation[0] = -90.f;
+	m_ModelProps[1].scale[0] = m_ModelProps[1].scale[1] = m_ModelProps[1].scale[2] = SPONZA_SCALE;
+	m_ModelProps[1].rotation[1] = 90.f;
 	m_Models[1]->GetUseCombinedTextures() = false;
 
-	props[2].scale[0] = props[2].scale[1] = props[2].scale[2] = SPONZA_SCALE;
+	m_ModelProps[2].scale[0] = m_ModelProps[2].scale[1] = m_ModelProps[2].scale[2] = SPONZA_SCALE;
 
 	// for sponza
-	lightProps.lightPos[0] = { 0.f, 21.f, 0.f };
-	lightProps.lightPos[1] = { 30.f, 4.8f, -2.95f };
-	lightProps.lightPos[2] = { -30.f, 3.6f, 19.5f };
-
-	// for bistro interior
-	//props[1].rotation[0] = -90.f;
-	//lightProps.lightPos[0][0] = 25.f;
-	//lightProps.lightPos[0][1] = 15.7f;
-	//lightProps.lightPos[0][2] = -2.5f;
-
-	// many pistols
-	//for (int i = 0; i < 48; i++)
-	//{
-	//	std::string prefix = "E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\cerberus\\textures\\";
-	//	models.emplace_back(new Model("E:\\Development\\Projects\\C_C++\\DirectX11\\resources\\cerberus\\Cerberus_LP.FBX", prefix + "Cerberus_A.jpg", prefix + "Cerberus_N.jpg", prefix + "Cerberus_R.jpg", prefix + "Cerberus_M.jpg"));
-	//	props.emplace_back(Properties());
-	//	props[2 + i].scale[0] = props[2 + i].scale[1] = props[2 + i].scale[2] = 0.02f;
-	//	props[2 + i].rotation[0] = -90.f;
-	//	props[2 + i].translation[1] = 5.f;
-	//	props[2 + i].translation[0] = -30.f + 5.f * (i % 16);
-	//	props[2 + i].translation[2] = -10.f + 10.f * i / 48.f;
-	//}
+	m_LightProps.lightPos[0] = { 0.f, 21.f, 0.f };
+	m_LightProps.lightPos[1] = { 30.f, 4.8f, -2.95f };
+	m_LightProps.lightPos[2] = { -30.f, 3.6f, 19.5f };
 
 
-	D3D11_BUFFER_DESC bd;
-	ZeroMemory(&bd, sizeof(bd));
-	bd.Usage = D3D11_USAGE_DEFAULT;
-	bd.ByteWidth = sizeof(MatricesCB);
-	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	bd.CPUAccessFlags = 0;
-	HRESULT hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMatrixes);
-	if (FAILED(hr)) std::cout << "Can't create g_pCBMatrixes\n";
-
-	bd.ByteWidth = sizeof(LightCB);
-	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBLight);
-	if (FAILED(hr)) std::cout << "Can't create g_pCBLight\n";
-
-	bd.ByteWidth = sizeof(MaterialCB);
-	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMaterial);
-	if (FAILED(hr)) std::cout << "Can't create g_pCBMaterial\n";
-
-	bd.ByteWidth = sizeof(SkeletalAnimationCB);
-	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBSkeletalAnimation);
-	if (FAILED(hr)) std::cout << "Can't create g_pCBSkeletalAnimation\n";
-
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(sampDesc));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	//sampDesc.MaxAnisotropy = 16;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-
-	hr = m_DX11Device->CreateSamplerState(&sampDesc, &g_pSamplerLinear);
-
-	// for cubemapping
-	D3D11_RASTERIZER_DESC rdesc;
-	ZeroMemory(&rdesc, sizeof(rdesc));
-	rdesc.CullMode = D3D11_CULL_NONE;
-	rdesc.FillMode = D3D11_FILL_SOLID;
-	hr = m_DX11Device->CreateRasterizerState(&rdesc, &m_CubemapRasterizerState);
-	if (FAILED(hr)) std::cout << "Can't create RasterizerState!\n";
-
-	D3D11_DEPTH_STENCIL_DESC dsdesc;
-	ZeroMemory(&dsdesc, sizeof(dsdesc));
-	dsdesc.DepthEnable = true;
-	dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-	hr = m_DX11Device->CreateDepthStencilState(&dsdesc, &m_CubemapDepthStencilState);
-	if (FAILED(hr)) std::cout << "Can't create DepthStencilState!\n";
-
+	InitDXStuff();
 
 	FramebufferToTextureInit();
 
@@ -332,6 +263,94 @@ bool TestApplication::Init()
 	}
 	PointLightDepthToTextureInit();
 
+
+	m_Cameras.emplace_back(Camera()); // main camera 
+	// light cameras and prev positions
+	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
+	{
+		m_Cameras.emplace_back(Camera());
+		lightPositionsPrev.emplace_back(glm::vec3(0.f));
+	}
+	m_Cameras.emplace_back(Camera()); // for spotlight
+
+
+	//gBuffer = new DX11GBuffer();
+	//gBuffer->Initialize(texWidth, texHeight);
+
+	NvidiaVXGIInit();
+	RenderCubeInit();
+	RenderQuadInit();
+
+	// for sky cubemapping
+	RenderCubeFromTheInsideInit();
+	InitHDRCubemap("../resources/hdrs/kloofendal_48d_partly_cloudy_puresky_4k.hdr");
+
+	initPhysics(true);
+
+	m_BoxAlbedo = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_diff_4k.png");
+	m_BoxNormal = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_nor_dx_4k.png");
+	m_BoxRoughness = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_rough_4k.png");
+
+	FMODInit();
+
+	//m_GamePad = std::make_unique<GamePad>();
+
+	//PostprocessingToTextureInit();
+
+	return true;
+}
+
+void TestApplication::InitDXStuff()
+{
+	D3D11_BUFFER_DESC bd;
+	ZeroMemory(&bd, sizeof(bd));
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.ByteWidth = sizeof(MatricesCB);
+	bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	bd.CPUAccessFlags = 0;
+	HRESULT hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMatrixes);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBMatrixes\n";
+
+	bd.ByteWidth = sizeof(LightCB);
+	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBLight);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBLight\n";
+
+	bd.ByteWidth = sizeof(MaterialCB);
+	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBMaterial);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBMaterial\n";
+
+	bd.ByteWidth = sizeof(SkeletalAnimationCB);
+	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBSkeletalAnimation);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBSkeletalAnimation\n";
+
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(sampDesc));
+	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+	//sampDesc.MaxAnisotropy = 16;
+	sampDesc.MinLOD = 0;
+	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+	hr = m_DX11Device->CreateSamplerState(&sampDesc, &g_pSamplerLinear);
+
+	// for cubemapping
+	D3D11_RASTERIZER_DESC rdesc;
+	ZeroMemory(&rdesc, sizeof(rdesc));
+	rdesc.CullMode = D3D11_CULL_NONE;
+	rdesc.FillMode = D3D11_FILL_SOLID;
+	hr = m_DX11Device->CreateRasterizerState(&rdesc, &m_CubemapRasterizerState);
+	if (FAILED(hr)) std::cout << "Can't create RasterizerState!\n";
+
+	D3D11_DEPTH_STENCIL_DESC dsdesc;
+	ZeroMemory(&dsdesc, sizeof(dsdesc));
+	dsdesc.DepthEnable = true;
+	dsdesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	hr = m_DX11Device->CreateDepthStencilState(&dsdesc, &m_CubemapDepthStencilState);
+	if (FAILED(hr)) std::cout << "Can't create DepthStencilState!\n";
+
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
 	sampDesc.Filter = D3D11_FILTER_ANISOTROPIC;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
@@ -369,55 +388,14 @@ bool TestApplication::Init()
 
 	const D3D11_DEPTH_STENCILOP_DESC defaultStencilOp =
 	{ D3D11_STENCIL_OP_KEEP,
-	  D3D11_STENCIL_OP_KEEP,
-	  D3D11_STENCIL_OP_KEEP,
-	  D3D11_COMPARISON_ALWAYS };
+		D3D11_STENCIL_OP_KEEP,
+		D3D11_STENCIL_OP_KEEP,
+		D3D11_COMPARISON_ALWAYS };
 
 	depthStencilDesc.FrontFace = defaultStencilOp;
 	depthStencilDesc.BackFace = defaultStencilOp;
 
 	hr = m_DX11Device->CreateDepthStencilState(&depthStencilDesc, &m_pGBufferReverseZDepthStencilState);
-
-	m_Cameras.emplace_back(Camera()); // main camera 
-	// light cameras and prev positions
-	for (int i = 0; i < NUM_POINT_LIGHTS; i++)
-	{
-		m_Cameras.emplace_back(Camera());
-		lightPositionsPrev.emplace_back(glm::vec3(0.f));
-	}
-	m_Cameras.emplace_back(Camera()); // for spotlight
-
-
-	//gBuffer = new DX11GBuffer();
-	//gBuffer->Initialize(texWidth, texHeight);
-
-	NvidiaVXGIInit();
-	RenderCubeInit();
-	RenderQuadInit();
-
-	// for sky cubemapping
-	RenderCubeFromTheInsideInit();
-	InitHDRCubemap("../resources/hdrs/kloofendal_48d_partly_cloudy_puresky_4k.hdr");
-
-	initPhysics(true);
-
-	//auto coltBounds = m_Models[0]->GetBounds();
-	//std::cout << "Colt Python bounds: (" <<
-	//	coltBounds.lower.x << ", " << coltBounds.lower.y << ", " << coltBounds.lower.z
-	//	<< " | " << coltBounds.upper.x << ", " << coltBounds.upper.y << ", " << coltBounds.upper.z << ")\n";
-
-
-	m_BoxAlbedo = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_diff_4k.png");
-	m_BoxNormal = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_nor_dx_4k.png");
-	m_BoxRoughness = Texture2D::Create("..\\resources\\wood_planks_4k\\wood_planks_rough_4k.png");
-
-	FMODInit();
-
-	//m_GamePad = std::make_unique<GamePad>();
-
-	//PostprocessingToTextureInit();
-
-	return true;
 }
 
 void TestApplication::RenderLoop()
@@ -450,7 +428,6 @@ void TestApplication::RenderLoop()
 		else
 		{
 			glfwSetInputMode(((WindowsWindow*)m_Window.get())->GetGLFWwindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			//ImGui::SetMouseCursor(ImGuiMouseCursor_Arrow);
 		}
 
 
@@ -486,208 +463,9 @@ void TestApplication::RenderLoop()
 		if (!m_bFreeCameraView)
 			MoveCharacter(m_CameraViewMatrix, m_CameraPos, m_CameraFrontVector);
 
-		//for (int i = 0; i < 48; i++)
-		//{
-		//	props[2 + i].rotation[2] += glfwGetTime() * deltaTime * 5.f;
-		//}
-
-		//lightProps.lightPos[0][2] = glm::cos(glfwGetTime()/2.f) * 8.f;
-
 		ImguiFrame();
-		SetupImguiDockspace();
 
-		int windowFlags = 0;
-
-		if (viewPortActive)
-			windowFlags |= ImGuiWindowFlags_NoInputs;
-		else
-			windowFlags &= ~ImGuiWindowFlags_NoInputs;
-
-		ImGui::Begin("Properties", nullptr, windowFlags);
-		ImGui::Checkbox("VSync", &m_bEnableVsync);
-		const char* items[]{ "Main Camera", "Light1", "Light2", "Light3", "SpotLight" };
-		if (ImGui::Combo("Camera", &SelectedCamera, items, 5))
-		{
-		}
-		ImGui::SliderFloat("Cam Speed", &m_Cameras[SelectedCamera].GetMovementSpeed(), 1.f, 150.f);
-		ImGui::SliderFloat3("Tr", (float*)&props[currentModelId].translation, -10.f, 10.f);
-		ImGui::SliderFloat3("Rt", (float*)&props[currentModelId].rotation, -180.f, 180.f);
-		ImGui::SliderFloat3("Sc", (float*)&props[currentModelId].scale, 0.f, 5.f);
-		if (ImGui::Button("Change Mesh"))
-		{
-			openFile(modelPath);
-			if (!modelPath.empty())
-			{
-				delete m_Models[currentModelId];
-				m_Models[currentModelId] = new Model(modelPath, "", "", "", "");
-				modelPath = "";
-			}
-		}
-		ImGui::Text("Textures");
-		ImGui::Checkbox("Combined", &m_Models[currentModelId]->GetUseCombinedTextures());
-		if (ImGui::Button("A"))
-		{
-			openFile(props[currentModelId].albedoPath);
-			if (!props[currentModelId].albedoPath.empty())
-			{
-				m_Models[currentModelId]->ChangeTexture(props[currentModelId].albedoPath, TextureType::ALBEDO);
-			}
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Albedo", &props[currentModelId].albedoPath);
-		if (ImGui::Button("N"))
-		{
-			openFile(props[currentModelId].normalPath);
-			if (!props[currentModelId].normalPath.empty())
-			{
-				m_Models[currentModelId]->ChangeTexture(props[currentModelId].normalPath, TextureType::NORMAL);
-			}
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Normal", &props[currentModelId].normalPath);
-		if (ImGui::Button("R"))
-		{
-			openFile(props[currentModelId].roughnessPath);
-			if (!props[currentModelId].roughnessPath.empty())
-			{
-				m_Models[currentModelId]->ChangeTexture(props[currentModelId].roughnessPath, TextureType::ROUGHNESS);
-			}
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Roughness", &props[currentModelId].roughnessPath);
-		if (ImGui::Button("M"))
-		{
-			openFile(props[currentModelId].metallicPath);
-			if (!props[currentModelId].metallicPath.empty())
-			{
-				m_Models[currentModelId]->ChangeTexture(props[currentModelId].metallicPath, TextureType::METALLIC);
-			}
-		}
-		ImGui::SameLine();
-		ImGui::InputText("Metallic", &props[currentModelId].metallicPath);
-		ImGui::SliderFloat("NormalStrength", &normalStrength, 0.001f, 10.f);
-
-		ImGui::Text("Light");
-		const char* lightItems[]{ "1", "2", "3" };
-		if (ImGui::Combo("Light", &CurrentLightIndex, lightItems, 3))
-		{
-		}
-		ImGui::SliderFloat3("Position", (float*)&lightProps.lightPos[CurrentLightIndex], -30.f, 30.f);
-		ImGui::SliderFloat("Constant", &lightProps.constant, 0.001f, 10.f);
-		ImGui::SliderFloat("Linear", &lightProps.linear, 0.001f, 1.f);
-		ImGui::SliderFloat("Quadratic", &lightProps.quadratic, 0.001f, 1.f);
-		ImGui::SliderFloat3("Color", lightProps.color, 0.001f, 1.f);
-		ImGui::SliderFloat("Bias", &m_ShadowMapBias, 0.0f, 0.0005f, "%.5f");
-		ImGui::SliderFloat("PreBias", &depthBias, 0.01f, 1000.f);
-		ImGui::SliderFloat("SlopeBias", &slopeBias, 0.01f, 100.f);
-		ImGui::SliderFloat("Clamp", &depthBiasClamp, 0.1f, 1.f);
-
-		ImGui::Text("GI Settings");
-		ImGui::Checkbox("Enable GI", &m_bEnableGI);
-		ImGui::SliderFloat("DiffuseScale", &g_fDiffuseScale, 0.01f, 1.f);
-		ImGui::SliderFloat("SpecularScale", &g_fSpecularScale, 0.0f, 1.f);
-		ImGui::Checkbox("Temporal Filtering", &g_bTemporalFiltering);
-		ImGui::SliderFloat("SamplingRate", &g_fSamplingRate, 0.25f, 1.f);
-		ImGui::SliderFloat("Quality", &g_fQuality, 0.001f, 1.f);
-		ImGui::SliderFloat("MultiBounceScale", &g_fMultiBounceScale, 0.001f, 2.f);
-		ImGui::SliderFloat("VXAOScale", &m_fVxaoScale, 0.001f, 50.f);
-		ImGui::Text("GI Debug View");
-		ImGui::Checkbox("Show diffuse only", &m_bShowDiffuseTexture);
-		if (m_bShowDiffuseTexture)
-			ImGui::Checkbox("Render debug", &m_bVXGIRenderDebug);
-		ImGui::Checkbox("Enable SSAO", &g_bEnableSSAO);
-
-
-		ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
-		ImGui::SliderFloat("CharacterCameraZoom", &m_FollowCharacterCameraZoom, 1.f, 5.f);
-		ImGui::Checkbox("FreeCameraView", &m_bFreeCameraView);
-
-		ImGui::End();
-
-		m_Cameras[1].GetPosition() = lightProps.lightPos[0];
-		m_Cameras[2].GetPosition() = lightProps.lightPos[1];
-		m_Cameras[3].GetPosition() = lightProps.lightPos[2];
-
-
-		ImGui::Begin("Scene", nullptr, windowFlags);
-		if (ImGui::Button("New"))
-		{
-			openFile(modelPath);
-			if (!modelPath.empty())
-			{
-				m_Models.emplace_back(new Model(modelPath, "", "", "", ""));
-				props.emplace_back(Properties());
-				modelPath = "";
-			}
-		}
-
-		for (int i = 0; i < m_Models.size(); i++)
-		{
-			char nodeName[16];
-			snprintf(nodeName, 16, "Model_%d", i);
-			ImGuiTreeNodeFlags flags = ((currentModelId == i) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
-			bool opened = ImGui::TreeNodeEx(nodeName, flags);
-			if (ImGui::BeginPopupContextItem())
-			{
-				if (ImGui::MenuItem("Delete"))
-				{
-					delete m_Models[i];
-					m_Models.erase(m_Models.begin() + i);
-					props.erase(props.begin() + i);
-					if (currentModelId == i)
-						currentModelId = 0;
-				}
-				ImGui::EndPopup();
-			}
-			if (ImGui::IsItemClicked())
-			{
-				currentModelId = i;
-			}
-			if (opened)
-			{
-				ImGui::TreePop();
-			}
-		}
-		ImGui::End();
-
-		ImGui::Begin("Status", nullptr, windowFlags);
-		ImGui::Text("FPS: %f\nMeshes drawn: %d/%d", 1.f/m_DeltaTime, m_DrawInfo.meshesDrawn, m_DrawInfo.totalMeshes);
-		ImGui::End();
-
-		ImGui::Begin("Viewport", nullptr, windowFlags);
-		ImVec2 vMin = ImGui::GetWindowContentRegionMin();
-		ImVec2 vMax = ImGui::GetWindowContentRegionMax();
-
-		vMin.x += ImGui::GetWindowPos().x;
-		vMin.y += ImGui::GetWindowPos().y;
-		vMax.x += ImGui::GetWindowPos().x;
-		vMax.y += ImGui::GetWindowPos().y;
-
-		//vRegionMinX = vMin.x;
-		//vRegionMinY = vMin.y;
-
-		texWidth = vMax.x - vMin.x;
-		texHeight = vMax.y - vMin.y;
-		if (texWidth != texWidthPrev || texHeight != texHeightPrev)
-		{
-			DX11RendererAPI::GetInstance()->SetViewport(vMin.x, vMin.y, texWidth, texHeight);
-			FramebufferToTextureInit();
-			//PostprocessingToTextureInit();
-			//gBuffer->Shutdown();
-			//if (!gBuffer->Initialize(texWidth, texHeight))
-			//	std::cout << "Failed to init gBuffer!\n";
-			PrepareGbufferRenderTargets(texWidth, texHeight);
-			texWidthPrev = texWidth;
-			texHeightPrev = texHeight;
-		}
-		ImGui::Image((ImTextureID)(intptr_t)frameSRV, ImVec2(texWidth, texHeight));
-		ImGui::End();
-
-		m_Renderer->BeginScene();
-
-		//props[0].translation[0] = shapePos.x * 0.05f;
-		//props[0].translation[1] = shapePos.y * 0.05f;
-		//props[0].translation[2] = shapePos.z * 0.05f;		
+		m_Renderer->BeginScene();	
 
 		ChangeDepthBiasParameters(depthBias, slopeBias, depthBiasClamp);
 
@@ -766,8 +544,6 @@ void TestApplication::RenderLoop()
 		}
 		RenderHDRCubemap();
 		RenderToGBufferEnd();
-
-		//std::cout << "Meshes drawn: " << m_MeshesDrawn << '\n';
 
 		// Reset state
 		rendererInterface->clearState();
@@ -983,16 +759,16 @@ void TestApplication::Cleanup()
 	FMODCleanup();
 
 	SAFE_DELETE(m_Animator);
-	SAFE_DELETE(m_RunAnimation); 
-	SAFE_DELETE(m_IdleAnimation); 
-	SAFE_DELETE(m_ShootingAnimation); 
+	SAFE_DELETE(m_RunAnimation);
+	SAFE_DELETE(m_IdleAnimation);
+	SAFE_DELETE(m_ShootingAnimation);
 
 
 	SAFE_RELEASE(m_HDRShaderResourceView);
-	SAFE_RELEASE(m_CubemapDepthStencilState); 
+	SAFE_RELEASE(m_CubemapDepthStencilState);
 	SAFE_RELEASE(m_CubemapRasterizerState);
 	SAFE_RELEASE(m_CubemapShaderResourceView);
-	SAFE_RELEASE(m_CubemapTexture); 
+	SAFE_RELEASE(m_CubemapTexture);
 
 	ImguiCleanup();
 	m_Renderer->Shutdown();
@@ -1111,6 +887,194 @@ void TestApplication::ImguiFrame()
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 	//ImGui::ShowDemoWindow(); // Show demo window! :)
+	SetupImguiDockspace();
+
+	int windowFlags = 0;
+
+	if (viewPortActive)
+		windowFlags |= ImGuiWindowFlags_NoInputs;
+	else
+		windowFlags &= ~ImGuiWindowFlags_NoInputs;
+
+	ImGui::Begin("Properties", nullptr, windowFlags);
+	ImGui::Checkbox("VSync", &m_bEnableVsync);
+	const char* items[]{ "Main Camera", "Light1", "Light2", "Light3", "SpotLight" };
+	if (ImGui::Combo("Camera", &SelectedCamera, items, 5))
+	{
+	}
+	ImGui::SliderFloat("Cam Speed", &m_Cameras[SelectedCamera].GetMovementSpeed(), 1.f, 150.f);
+	ImGui::SliderFloat3("Tr", (float*)&m_ModelProps[currentModelId].translation, -10.f, 10.f);
+	ImGui::SliderFloat3("Rt", (float*)&m_ModelProps[currentModelId].rotation, -180.f, 180.f);
+	ImGui::SliderFloat3("Sc", (float*)&m_ModelProps[currentModelId].scale, 0.f, 5.f);
+	if (ImGui::Button("Change Mesh"))
+	{
+		OpenFile(modelPath);
+		if (!modelPath.empty())
+		{
+			delete m_Models[currentModelId];
+			m_Models[currentModelId] = new Model(modelPath, "", "", "", "");
+			modelPath = "";
+		}
+	}
+	ImGui::Text("Textures");
+	ImGui::Checkbox("Combined", &m_Models[currentModelId]->GetUseCombinedTextures());
+	if (ImGui::Button("A"))
+	{
+		OpenFile(m_ModelProps[currentModelId].albedoPath);
+		if (!m_ModelProps[currentModelId].albedoPath.empty())
+		{
+			m_Models[currentModelId]->ChangeTexture(m_ModelProps[currentModelId].albedoPath, TextureType::ALBEDO);
+		}
+	}
+	ImGui::SameLine();
+	ImGui::InputText("Albedo", &m_ModelProps[currentModelId].albedoPath);
+	if (ImGui::Button("N"))
+	{
+		OpenFile(m_ModelProps[currentModelId].normalPath);
+		if (!m_ModelProps[currentModelId].normalPath.empty())
+		{
+			m_Models[currentModelId]->ChangeTexture(m_ModelProps[currentModelId].normalPath, TextureType::NORMAL);
+		}
+	}
+	ImGui::SameLine();
+	ImGui::InputText("Normal", &m_ModelProps[currentModelId].normalPath);
+	if (ImGui::Button("R"))
+	{
+		OpenFile(m_ModelProps[currentModelId].roughnessPath);
+		if (!m_ModelProps[currentModelId].roughnessPath.empty())
+		{
+			m_Models[currentModelId]->ChangeTexture(m_ModelProps[currentModelId].roughnessPath, TextureType::ROUGHNESS);
+		}
+	}
+	ImGui::SameLine();
+	ImGui::InputText("Roughness", &m_ModelProps[currentModelId].roughnessPath);
+	if (ImGui::Button("M"))
+	{
+		OpenFile(m_ModelProps[currentModelId].metallicPath);
+		if (!m_ModelProps[currentModelId].metallicPath.empty())
+		{
+			m_Models[currentModelId]->ChangeTexture(m_ModelProps[currentModelId].metallicPath, TextureType::METALLIC);
+		}
+	}
+	ImGui::SameLine();
+	ImGui::InputText("Metallic", &m_ModelProps[currentModelId].metallicPath);
+	ImGui::SliderFloat("NormalStrength", &normalStrength, 0.001f, 10.f);
+
+	ImGui::Text("Light");
+	const char* lightItems[]{ "1", "2", "3" };
+	if (ImGui::Combo("Light", &CurrentLightIndex, lightItems, 3))
+	{
+	}
+	ImGui::SliderFloat3("Position", (float*)&m_LightProps.lightPos[CurrentLightIndex], -30.f, 30.f);
+	ImGui::SliderFloat("Constant", &m_LightProps.constant, 0.001f, 10.f);
+	ImGui::SliderFloat("Linear", &m_LightProps.linear, 0.001f, 1.f);
+	ImGui::SliderFloat("Quadratic", &m_LightProps.quadratic, 0.001f, 1.f);
+	ImGui::SliderFloat3("Color", m_LightProps.color, 0.001f, 1.f);
+	ImGui::SliderFloat("Bias", &m_ShadowMapBias, 0.0f, 0.0005f, "%.5f");
+	ImGui::SliderFloat("PreBias", &depthBias, 0.01f, 1000.f);
+	ImGui::SliderFloat("SlopeBias", &slopeBias, 0.01f, 100.f);
+	ImGui::SliderFloat("Clamp", &depthBiasClamp, 0.1f, 1.f);
+
+	ImGui::Text("GI Settings");
+	ImGui::Checkbox("Enable GI", &m_bEnableGI);
+	ImGui::SliderFloat("DiffuseScale", &g_fDiffuseScale, 0.01f, 1.f);
+	ImGui::SliderFloat("SpecularScale", &g_fSpecularScale, 0.0f, 1.f);
+	ImGui::Checkbox("Temporal Filtering", &g_bTemporalFiltering);
+	ImGui::SliderFloat("SamplingRate", &g_fSamplingRate, 0.25f, 1.f);
+	ImGui::SliderFloat("Quality", &g_fQuality, 0.001f, 1.f);
+	ImGui::SliderFloat("MultiBounceScale", &g_fMultiBounceScale, 0.001f, 2.f);
+	ImGui::SliderFloat("VXAOScale", &m_fVxaoScale, 0.001f, 50.f);
+	ImGui::Text("GI Debug View");
+	ImGui::Checkbox("Show diffuse only", &m_bShowDiffuseTexture);
+	if (m_bShowDiffuseTexture)
+		ImGui::Checkbox("Render debug", &m_bVXGIRenderDebug);
+	ImGui::Checkbox("Enable SSAO", &g_bEnableSSAO);
+
+
+	ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
+	ImGui::SliderFloat("CharacterCameraZoom", &m_FollowCharacterCameraZoom, 1.f, 5.f);
+	ImGui::Checkbox("FreeCameraView", &m_bFreeCameraView);
+
+	ImGui::End();
+
+	m_Cameras[1].GetPosition() = m_LightProps.lightPos[0];
+	m_Cameras[2].GetPosition() = m_LightProps.lightPos[1];
+	m_Cameras[3].GetPosition() = m_LightProps.lightPos[2];
+
+
+	ImGui::Begin("Scene", nullptr, windowFlags);
+	if (ImGui::Button("New"))
+	{
+		OpenFile(modelPath);
+		if (!modelPath.empty())
+		{
+			m_Models.emplace_back(new Model(modelPath, "", "", "", ""));
+			m_ModelProps.emplace_back(Properties());
+			modelPath = "";
+		}
+	}
+
+	for (int i = 0; i < m_Models.size(); i++)
+	{
+		char nodeName[16];
+		snprintf(nodeName, 16, "Model_%d", i);
+		ImGuiTreeNodeFlags flags = ((currentModelId == i) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+		bool opened = ImGui::TreeNodeEx(nodeName, flags);
+		if (ImGui::BeginPopupContextItem())
+		{
+			if (ImGui::MenuItem("Delete"))
+			{
+				delete m_Models[i];
+				m_Models.erase(m_Models.begin() + i);
+				m_ModelProps.erase(m_ModelProps.begin() + i);
+				if (currentModelId == i)
+					currentModelId = 0;
+			}
+			ImGui::EndPopup();
+		}
+		if (ImGui::IsItemClicked())
+		{
+			currentModelId = i;
+		}
+		if (opened)
+		{
+			ImGui::TreePop();
+		}
+	}
+	ImGui::End();
+
+	ImGui::Begin("Status", nullptr, windowFlags);
+	ImGui::Text("FPS: %f\nMeshes drawn: %d/%d", 1.f / m_DeltaTime, m_DrawInfo.meshesDrawn, m_DrawInfo.totalMeshes);
+	ImGui::End();
+
+	ImGui::Begin("Viewport", nullptr, windowFlags);
+	ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+	ImVec2 vMax = ImGui::GetWindowContentRegionMax();
+
+	vMin.x += ImGui::GetWindowPos().x;
+	vMin.y += ImGui::GetWindowPos().y;
+	vMax.x += ImGui::GetWindowPos().x;
+	vMax.y += ImGui::GetWindowPos().y;
+
+	//vRegionMinX = vMin.x;
+	//vRegionMinY = vMin.y;
+
+	texWidth = vMax.x - vMin.x;
+	texHeight = vMax.y - vMin.y;
+	if (texWidth != texWidthPrev || texHeight != texHeightPrev)
+	{
+		DX11RendererAPI::GetInstance()->SetViewport(vMin.x, vMin.y, texWidth, texHeight);
+		FramebufferToTextureInit();
+		//PostprocessingToTextureInit();
+		//gBuffer->Shutdown();
+		//if (!gBuffer->Initialize(texWidth, texHeight))
+		//	std::cout << "Failed to init gBuffer!\n";
+		PrepareGbufferRenderTargets(texWidth, texHeight);
+		texWidthPrev = texWidth;
+		texHeightPrev = texHeight;
+	}
+	ImGui::Image((ImTextureID)(intptr_t)frameSRV, ImVec2(texWidth, texHeight));
+	ImGui::End();
 }
 
 void TestApplication::ImguiRender()
@@ -1324,7 +1288,7 @@ void TestApplication::FramebufferToTextureEnd()
 	static_cast<DX11RendererAPI*>(RendererAPI::GetInstance().get())->ResetRenderTargetView();
 }
 
-bool TestApplication::openFile(std::string& pathRef)
+bool TestApplication::OpenFile(std::string& pathRef)
 {
 	//  CREATE FILE OBJECT INSTANCE
 	HRESULT f_SysHr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
@@ -1581,10 +1545,10 @@ void TestApplication::RenderQuad()
 	lightCb.lightPos[1] = glm::vec4(m_Cameras[2].GetPosition().x, m_Cameras[2].GetPosition().y, m_Cameras[2].GetPosition().z, 1.f);
 	lightCb.lightPos[2] = glm::vec4(m_Cameras[3].GetPosition().x, m_Cameras[3].GetPosition().y, m_Cameras[3].GetPosition().z, 1.f);
 	lightCb.lightPos[3] = glm::vec4(m_Cameras[4].GetPosition().x, m_Cameras[4].GetPosition().y, m_Cameras[4].GetPosition().z, 1.f);
-	lightCb.conLinQuad[0] = lightProps.constant;
-	lightCb.conLinQuad[1] = lightProps.linear;
-	lightCb.conLinQuad[2] = lightProps.quadratic;
-	lightCb.lightColor = { lightProps.color[0], lightProps.color[1], lightProps.color[2] };
+	lightCb.conLinQuad[0] = m_LightProps.constant;
+	lightCb.conLinQuad[1] = m_LightProps.linear;
+	lightCb.conLinQuad[2] = m_LightProps.quadratic;
+	lightCb.lightColor = { m_LightProps.color[0], m_LightProps.color[1], m_LightProps.color[2] };
 	lightCb.bias = m_ShadowMapBias;
 	lightCb.camPos = /*m_Cameras[SelectedCamera].GetPosition()*/m_CameraPos;
 	lightCb.showDiffuseTexture = m_bShowDiffuseTexture;
@@ -1592,7 +1556,7 @@ void TestApplication::RenderQuad()
 	lightCb.enableGI = m_bEnableGI;
 	lightCb.cubeProj = lightProjMat;
 	lightCb.lightViewProjMat = spotlightProjMat * m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
-	lightCb.rcpFrame = glm::vec4(1.0f/texWidth, 1.0f/texHeight, 0.0f, 0.0f);
+	lightCb.rcpFrame = glm::vec4(1.0f / texWidth, 1.0f / texHeight, 0.0f, 0.0f);
 
 
 	m_DX11DeviceContext->UpdateSubresource(g_pCBLight, 0, NULL, &lightCb, 0, 0);
@@ -2097,10 +2061,10 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 	lightCb.lightPos[1] = glm::vec4(m_Cameras[2].GetPosition().x, m_Cameras[2].GetPosition().y, m_Cameras[2].GetPosition().z, 1.f);
 	lightCb.lightPos[2] = glm::vec4(m_Cameras[3].GetPosition().x, m_Cameras[3].GetPosition().y, m_Cameras[3].GetPosition().z, 1.f);
 	lightCb.lightPos[3] = glm::vec4(m_Cameras[4].GetPosition().x, m_Cameras[4].GetPosition().y, m_Cameras[4].GetPosition().z, 1.f);
-	lightCb.conLinQuad[0] = lightProps.constant;
-	lightCb.conLinQuad[1] = lightProps.linear;
-	lightCb.conLinQuad[2] = lightProps.quadratic;
-	lightCb.lightColor = { lightProps.color[0], lightProps.color[1], lightProps.color[2] };
+	lightCb.conLinQuad[0] = m_LightProps.constant;
+	lightCb.conLinQuad[1] = m_LightProps.linear;
+	lightCb.conLinQuad[2] = m_LightProps.quadratic;
+	lightCb.lightColor = { m_LightProps.color[0], m_LightProps.color[1], m_LightProps.color[2] };
 	lightCb.lightViewProjMat = spotlightProjMat * m_Cameras[NUM_POINT_LIGHTS + 1].GetViewMatrix();
 	lightCb.bias = m_ShadowMapBias;
 	lightCb.numLights = NUM_POINT_LIGHTS;
@@ -2129,9 +2093,9 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 	m_DrawInfo = {};
 	for (int i = 0; i < m_Models.size(); i++)
 	{
-		auto translate = props[i].translation;
-		auto rotate = props[i].rotation;
-		auto scale = props[i].scale;
+		auto translate = m_ModelProps[i].translation;
+		auto rotate = m_ModelProps[i].rotation;
+		auto scale = m_ModelProps[i].scale;
 
 		MatricesCB cb;
 		auto modelMat = glm::mat4(1.f);
@@ -2153,9 +2117,9 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 			}
 			else {
 
-				auto translate = props[2].translation;
-				auto rotate = props[2].rotation;
-				auto scale = props[2].scale;
+				auto translate = m_ModelProps[2].translation;
+				auto rotate = m_ModelProps[2].rotation;
+				auto scale = m_ModelProps[2].scale;
 				auto characterMat = glm::mat4(1.f);
 				characterMat = glm::translate(characterMat, glm::vec3(translate[0], translate[1], translate[2]));
 				characterMat = glm::rotate(characterMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
@@ -2166,7 +2130,7 @@ void TestApplication::RenderScene(glm::mat4 viewMatrix, glm::mat4 projMatrix, st
 				auto gunPos = glm::vec3(4.5f, 10.5f, 1.225f);
 				translate = gunPos;
 				rotate = glm::vec3(0.f, 90.f, 0.f);
-				scale = props[0].scale;
+				scale = m_ModelProps[0].scale;
 				auto modelMat = glm::mat4(1.f);
 				modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
 				modelMat = glm::translate(modelMat, glm::vec3(0.f, 0.f, 0.f));
@@ -2422,7 +2386,7 @@ void TestApplication::renderPhysics(float deltaTime)
 		//coltMat = glm::scale(coltMat, glm::vec3(10.f));
 
 		auto capsuleRotation = PxQuat(glm::radians(90.f), PxVec3(0.f, 0.f, 1.f));
-		m_CharacterCapsuleCollider->setGlobalPose(PxTransform(PxVec3(props[2].translation.x, props[2].translation.y, props[2].translation.z), capsuleRotation));
+		m_CharacterCapsuleCollider->setGlobalPose(PxTransform(PxVec3(m_ModelProps[2].translation.x, m_ModelProps[2].translation.y, m_ModelProps[2].translation.z), capsuleRotation));
 	}
 }
 
@@ -2476,36 +2440,36 @@ void TestApplication::RenderModelBounds(int modelIndex)
 		{
 			{ glm::vec3(-width, height, depth),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
 			{ glm::vec3(width, height, depth),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
-			{ glm::vec3(width, height, -depth),  glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},   
-			{ glm::vec3(-width, height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},  
+			{ glm::vec3(width, height, -depth),  glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(-width, height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f), 101, 0.f},
 
 
 			{ glm::vec3(-width, -height, -depth), glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
 			{ glm::vec3(width, -height, -depth),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
-			{ glm::vec3(width, -height, depth),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},  
+			{ glm::vec3(width, -height, depth),   glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
 			{ glm::vec3(-width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f), 101, 0.f},
 
 
 			{ glm::vec3(-width, height, depth),   glm::vec2(0.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
-			{ glm::vec3(-width, height, -depth),  glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},  
-			{ glm::vec3(-width, -height, -depth), glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},    
+			{ glm::vec3(-width, height, -depth),  glm::vec2(1.0f, 0.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(-width, -height, -depth), glm::vec2(1.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
 			{ glm::vec3(-width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(-1.0f, 0.0f, 0.0f), 101, 0.f},
 
 
 			{ glm::vec3(width, height, -depth),	 glm::vec2(0.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
-			{ glm::vec3(width, height, depth),	 glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},   
-			{ glm::vec3(width, -height, depth),	 glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},    
+			{ glm::vec3(width, height, depth),	 glm::vec2(1.0f, 0.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
+			{ glm::vec3(width, -height, depth),	 glm::vec2(1.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
 			{ glm::vec3(width, -height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(1.0f, 0.0f, 0.0f), 101, 0.f},
 
 
 			{ glm::vec3(-width, height, -depth),  glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
-			{ glm::vec3(width, height, -depth),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},   
+			{ glm::vec3(width, height, -depth),   glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
 			{ glm::vec3(width, -height, -depth),  glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
 			{ glm::vec3(-width, -height, -depth), glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, -1.0f), 101, 0.f},
 
 
 			{ glm::vec3(width, height, depth),   glm::vec2(0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
-			{ glm::vec3(-width, height, depth),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},  
+			{ glm::vec3(-width, height, depth),  glm::vec2(1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
 			{ glm::vec3(-width, -height, depth), glm::vec2(1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
 			{ glm::vec3(width, -height, depth),  glm::vec2(0.0f, 1.0f), glm::vec3(0.0f, 0.0f, 1.0f), 101, 0.f},
 		};
@@ -2550,9 +2514,9 @@ void TestApplication::RenderModelBounds(int modelIndex)
 
 		auto modelMat = glm::mat4(1.f);
 
-		auto translate = props[modelIndex].translation;
-		auto rotate = props[modelIndex].rotation;
-		auto scale = props[modelIndex].scale;
+		auto translate = m_ModelProps[modelIndex].translation;
+		auto rotate = m_ModelProps[modelIndex].rotation;
+		auto scale = m_ModelProps[modelIndex].scale;
 
 		modelMat = glm::translate(modelMat, glm::vec3(translate[0], translate[1], translate[2]));
 		modelMat = glm::rotate(modelMat, glm::radians(rotate[0]), glm::vec3(1.f, 0.f, 0.f));
@@ -2730,7 +2694,6 @@ glm::quat TestApplication::RotateTowards(const glm::quat& from, const glm::quat&
 	//return glm::quat(qw, qx, qy, qz);
 }
 
-
 void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos, glm::vec3& cameraFrontVector)
 {
 	// camera follows model
@@ -2784,11 +2747,11 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 	auto dirYaw = quatYaw * glm::vec3(0.f, 0.f, 5.f);
 	auto up = glm::vec3(0.f, 1.f, 0.f);
 
-	auto headPos = props[2].translation + glm::vec3(0.f, 1.75f, 0.f);
+	auto headPos = m_ModelProps[2].translation + glm::vec3(0.f, 1.75f, 0.f);
 	eye = dir + headPos - glm::normalize(glm::cross(dirYaw, up)) * 0.75f;
 
 	//transform.rotation = quatYaw;
-	transform.position = props[2].translation;
+	transform.position = m_ModelProps[2].translation;
 
 	// set default camera properties
 	viewMatrix = glm::lookAtLH(glm::vec3(eye), headPos - glm::normalize(glm::cross(dirYaw, up)) * 0.75f, glm::vec3(0.f, 1.f, 0.f));
@@ -2899,11 +2862,11 @@ void TestApplication::MoveCharacter(glm::mat4& viewMatrix, glm::vec3& cameraPos,
 	//}
 
 	auto eulerRotation = glm::eulerAngles(transform.rotation);
-	props[2].rotation.x = glm::degrees(eulerRotation.x);
-	props[2].rotation.y = glm::degrees(eulerRotation.y);
-	props[2].rotation.z = glm::degrees(eulerRotation.z);
+	m_ModelProps[2].rotation.x = glm::degrees(eulerRotation.x);
+	m_ModelProps[2].rotation.y = glm::degrees(eulerRotation.y);
+	m_ModelProps[2].rotation.z = glm::degrees(eulerRotation.z);
 
-	props[2].translation = transform.position;
+	m_ModelProps[2].translation = transform.position;
 
 	if (m_Animator)
 	{
@@ -3052,7 +3015,7 @@ void TestApplication::RenderCubeFromTheInsideInit()
 	InitData.pSysMem = indices;
 
 	hr = m_DX11Device->CreateBuffer(&bd, &InitData, &pCubemapIndexBuffer);
-	if (FAILED(hr)) return;	
+	if (FAILED(hr)) return;
 }
 
 void TestApplication::RenderCubeFromTheInside()
