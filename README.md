@@ -6,10 +6,8 @@ This is a test game engine that I am developing for educational purposes. Feel f
 
 
 ### Controls
-WASD: movement<br>
+WASD: camera/character movement<br>
 C: toggle viewport mode<br>
-Spacebar: throw a cube<br>
-V: add torque to the revolver (physics is still in development)<br>
 
 ### Download
 
