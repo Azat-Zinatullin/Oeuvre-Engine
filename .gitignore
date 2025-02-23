@@ -26,11 +26,7 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-<<<<<<< HEAD
 #[Bb]in/
-=======
-[Bb]in/
->>>>>>> 9870b169d063deb1bd9e8fdc7f2e585dc5c8d5cf
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
