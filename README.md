@@ -4,6 +4,16 @@ This is a test game engine that I am developing for educational purposes. Feel f
 
 ![image 2025-02-11 17-28-32-429](https://github.com/user-attachments/assets/1b159c25-60c4-4503-ae41-d6e9a416b278)
 
+### Current features
+- Voxel cone tracing global illumination (NVIDIA VXGI)
+- NVIDIA PhysX (integration in process)
+- PBR materials support
+- Deferred shading
+- Tone mapping
+- Frustum culling
+- HDRI cubemaps support
+- Omnidirectional shadowmaps
+- Skeletal animation and basic character movement
 
 ### Controls
 WASD: camera/character movement<br>
