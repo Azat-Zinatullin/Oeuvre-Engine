@@ -71,6 +71,7 @@ protected:
 	void OnKeyEvent(const Event<KeyEvents>& e);
 
 	virtual bool Init();
+	void InitDXStuff();
 	virtual void RenderLoop();
 	void ResetRenderState();
 	virtual void Cleanup();
@@ -98,7 +99,7 @@ protected:
 	void FramebufferToTextureBegin();
 	void FramebufferToTextureEnd();
 
-	bool openFile(std::string& pathRef);
+	bool OpenFile(std::string& pathRef);
 	std::string sSelectedFile;
 	std::string sFilePath;
 
@@ -124,7 +125,7 @@ protected:
 		std::string roughnessPath;
 		std::string metallicPath;
 	};
-	std::vector<Properties> props;
+	std::vector<Properties> m_ModelProps;
 
 	struct LightProps
 	{
@@ -134,7 +135,7 @@ protected:
 		float quadratic = 0.001f;
 		float color[3] = { 1.f, 1.f, 1.f };
 	};
-	LightProps lightProps;
+	LightProps m_LightProps;
 	int CurrentLightIndex = 0;
 
 	int currentModelId = 0;
