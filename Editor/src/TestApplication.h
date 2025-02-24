@@ -471,5 +471,9 @@ protected:
 	float aimPitch = 0.f;
 	glm::quat aimPitchRotation = glm::quat();
 
+	ID3D11Buffer* g_pCBPostprocessing = nullptr;
+
+	bool m_bEnableFXAA = true;
+
 };
 

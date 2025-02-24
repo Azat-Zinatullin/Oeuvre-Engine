@@ -1,8 +1,18 @@
 #pragma pack_matrix( row_major )
 
-#include "LightConstantBuffer.hlsli"
+#include "PostprocessingConstantBuffer.hlsli"
+
+
+#define FXAA_PRESET 5
 
 #include "FXAA.hlsl"
+
+//#define FXAA_PC 1
+//#define FXAA_HLSL_5 1
+//#define FXAA_QUALITY__PRESET 12
+//#define FXAA_GREEN_AS_LUMA 1
+
+//#include "fxaa.hlsli"
 
 struct Input
 {
@@ -15,7 +25,7 @@ SamplerState s_samLinear : register(s0);
 
 float4 PSMain(Input input) : SV_Target
 {   
-    float2 pos = (input.Pos.xy * FxaaFloat2(0.5, 0.5)) + FxaaFloat2(0.5, 0.5);
+    //float2 pos = (input.tex.xy * FxaaFloat2(0.5, 0.5)) + FxaaFloat2(0.5, 0.5);
 
     FxaaTex fxaaTex;
     fxaaTex.smpl = s_samLinear;
@@ -24,6 +34,6 @@ float4 PSMain(Input input) : SV_Target
     uint dx, dy;
     t_Processed.GetDimensions(dx, dy);
     float2 rcpro = rcp(float2(dx, dy));
-    
-    return float4(FxaaPixelShader(pos, fxaaTex, rcpro), 1.f);
+      
+    return float4(FxaaPixelShader(input.tex, fxaaTex, rcpro), 1.f);  
 }

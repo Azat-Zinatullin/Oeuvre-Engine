@@ -140,6 +140,12 @@ struct __declspec(align(16)) SkeletalAnimationCB
 	glm::mat4 finalBonesMatrices[MAX_BONES];
 };
 
+struct __declspec(align(16)) PostprocessingCB
+{
+	float padding;
+	int enableFXAA;
+};
+
 bool TestApplication::Init()
 {
 	m_DX11Device = ((DX11RendererAPI*)RendererAPI::GetInstance().get())->GetDevice();
@@ -192,7 +198,7 @@ bool TestApplication::Init()
 	m_ModelProps[1].rotation[1] = 90.f;
 	m_Models[1]->GetUseCombinedTextures() = false;
 
-	m_ModelProps[2].scale[0] = m_ModelProps[2].scale[1] = m_ModelProps[2].scale[2] = SPONZA_SCALE;
+	m_ModelProps[2].scale[0] = m_ModelProps[2].scale[1] = m_ModelProps[2].scale[2] = 0.016f;
 
 	// for sponza
 	m_LightProps.lightPos[0] = { 0.f, 21.f, 0.f };
@@ -295,7 +301,7 @@ bool TestApplication::Init()
 
 	//m_GamePad = std::make_unique<GamePad>();
 
-	//PostprocessingToTextureInit();
+	PostprocessingToTextureInit();
 
 	return true;
 }
@@ -322,6 +328,10 @@ void TestApplication::InitDXStuff()
 	bd.ByteWidth = sizeof(SkeletalAnimationCB);
 	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBSkeletalAnimation);
 	if (FAILED(hr)) std::cout << "Can't create g_pCBSkeletalAnimation\n";
+
+	bd.ByteWidth = sizeof(PostprocessingCB);
+	hr = m_DX11Device->CreateBuffer(&bd, NULL, &g_pCBPostprocessing);
+	if (FAILED(hr)) std::cout << "Can't create g_pCBPostprocessing\n";
 
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(sampDesc));
@@ -630,15 +640,19 @@ void TestApplication::RenderLoop()
 			m_DeferredCompositingPixelShader->Unbind();
 			FramebufferToTextureEnd();
 
-			//PostprocessingToTextureBegin();
-			//m_DX11DeviceContext->PSSetShaderResources(0, 1, &frameSRV);
-			//m_DeferredCompositingVertexShader->Bind();
-			//m_PostprocessingPixelShader->Bind();
-			//m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
-			//RenderQuad();
-			//m_DeferredCompositingVertexShader->Unbind();
-			//m_PostprocessingPixelShader->Unbind();
-			//PostprocessingToTextureEnd();
+			PostprocessingToTextureBegin();
+			m_DX11DeviceContext->PSSetShaderResources(0, 1, &frameSRV);
+			m_DeferredCompositingVertexShader->Bind();
+			m_PostprocessingPixelShader->Bind();
+			m_DX11DeviceContext->PSSetSamplers(0, 1, &g_pSamplerLinear);
+			PostprocessingCB pCb;
+			pCb.enableFXAA = m_bEnableFXAA ? 1 : 0;
+			m_DX11DeviceContext->UpdateSubresource(g_pCBPostprocessing, 0, NULL, &pCb, 0, 0);
+			m_DX11DeviceContext->PSSetConstantBuffers(0, 1, &g_pCBPostprocessing);
+			RenderQuad();
+			m_DeferredCompositingVertexShader->Unbind();
+			m_PostprocessingPixelShader->Unbind();
+			PostprocessingToTextureEnd();
 		}
 
 		ImguiRender();
@@ -989,7 +1003,7 @@ void TestApplication::ImguiFrame()
 	if (m_bShowDiffuseTexture)
 		ImGui::Checkbox("Render debug", &m_bVXGIRenderDebug);
 	ImGui::Checkbox("Enable SSAO", &g_bEnableSSAO);
-
+	ImGui::Checkbox("Enable FXAA", &m_bEnableFXAA);
 
 	ImGui::SliderFloat("AnimBlendFactor", &m_IdleRunBlendFactor, 0.f, 1.f);
 	ImGui::SliderFloat("CharacterCameraZoom", &m_FollowCharacterCameraZoom, 1.f, 5.f);
@@ -1065,7 +1079,7 @@ void TestApplication::ImguiFrame()
 	{
 		DX11RendererAPI::GetInstance()->SetViewport(vMin.x, vMin.y, texWidth, texHeight);
 		FramebufferToTextureInit();
-		//PostprocessingToTextureInit();
+		PostprocessingToTextureInit();
 		//gBuffer->Shutdown();
 		//if (!gBuffer->Initialize(texWidth, texHeight))
 		//	std::cout << "Failed to init gBuffer!\n";
@@ -1073,7 +1087,7 @@ void TestApplication::ImguiFrame()
 		texWidthPrev = texWidth;
 		texHeightPrev = texHeight;
 	}
-	ImGui::Image((ImTextureID)(intptr_t)frameSRV, ImVec2(texWidth, texHeight));
+	ImGui::Image((ImTextureID)(intptr_t)postprocessingSRV, ImVec2(texWidth, texHeight));
 	ImGui::End();
 }
 
@@ -3205,8 +3219,8 @@ void TestApplication::RenderHDRCubemap()
 
 void TestApplication::PostprocessingToTextureInit()
 {
-	if (postprocessingSRV) postprocessingSRV->Release();
-	if (postprocessingTexture) postprocessingTexture->Release();
+	SAFE_RELEASE(postprocessingSRV);
+	SAFE_RELEASE(postprocessingTexture);
 
 	D3D11_TEXTURE2D_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(texDesc));
@@ -3235,7 +3249,7 @@ void TestApplication::PostprocessingToTextureInit()
 	result = m_DX11Device->CreateShaderResourceView(postprocessingTexture, &srvDesc, &postprocessingSRV);
 	if (FAILED(result)) return;
 
-	if (postprocessingRenderTexture) delete postprocessingRenderTexture;
+	SAFE_DELETE(postprocessingRenderTexture);
 	postprocessingRenderTexture = new RenderTexture;
 	postprocessingRenderTexture->Initialize(texWidth, texHeight, 1, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_D24_UNORM_S8_UINT, DXGI_FORMAT_R32G32B32A32_FLOAT, false);
 }
