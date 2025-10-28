@@ -1,0 +1,30 @@
+#pragma once
+
+#ifdef OV_PLATFORM_WINDOWS
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#endif
+
+#include <iostream>
+#include <memory>
+#include <utility>
+#include <algorithm>
+#include <functional>
+
+#include <string>
+#include <sstream>
+#include <array>
+#include <vector>
+#include <unordered_map>
+#include <unordered_set>
+#include <cassert>
+
+#include "Oeuvre/Core/Log.h"
+
+#ifdef OV_PLATFORM_WINDOWS
+#include "Oeuvre/Core/Win.h"
+#endif
+
+#include <d3d11.h>
+#include <d3dcompiler.h>

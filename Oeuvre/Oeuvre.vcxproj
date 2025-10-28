@@ -1,0 +1,318 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{BB668CC7-A708-B79D-90C3-CAF17C043EEE}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Oeuvre</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="..\packages\NVAPI.1.0.440\build\NVAPI.props" Condition="Exists('..\packages\NVAPI.1.0.440\build\NVAPI.props')" />
+    <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.props" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.props')" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>..\bin\Debug-windows-x86_64\Oeuvre\</OutDir>
+    <IntDir>..\bin-int\Debug-windows-x86_64\Oeuvre\</IntDir>
+    <TargetName>Oeuvre</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>..\bin\Release-windows-x86_64\Oeuvre\</OutDir>
+    <IntDir>..\bin-int\Release-windows-x86_64\Oeuvre\</IntDir>
+    <TargetName>Oeuvre</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ovpch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;OV_PLATFORM_WINDOWS;_DEBUG;OV_DEBUG;JPH_ENABLE_ASSERTS;JPH_DEBUG_RENDERER;JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\imgui;vendor\ImGuizmo;vendor\glm;vendor\assimp\include;vendor\stb\include;vendor\fmod\include;vendor\entt\include;vendor\mono\include;vendor\yaml-cpp\include;vendor\HBAOPlus\include;vendor\ffx_sdk\include;C:\VulkanSDK\1.4.321.1\Include;vendor\VulkanSDK\Include;vendor\VulkanMemoryAllocator\include;vendor\D3D12MemoryAllocator\include;vendor\JoltPhysics\JoltPhysics;vendor\shaderc\include;vendor\vk-bootstrap\src;vendor\Glad\include;vendor\imgui-node-editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ConformanceMode>false</ConformanceMode>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>opengl32.lib;vulkan-1.lib;assimp-vc143-mt.lib;GFSDK_SSAO_D3D11.win64.lib;ffx_brixelizer_x64d.lib;Ws2_32.lib;Winmm.lib;Version.lib;Bcrypt.lib;fmodL_vc.lib;libmono-static-sgen.lib;shaderc_combined.lib;JoltPhysics.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib;C:\VulkanSDK\1.4.321.1\Lib;lib\debug;vendor\mono\lib\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ovpch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>YAML_CPP_STATIC_DEFINE;OV_PLATFORM_WINDOWS;NDEBUG;OV_RELEASE;JPH_DEBUG_RENDERER;JPH_FLOATING_POINT_EXCEPTIONS_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>src;vendor\spdlog\include;vendor\GLFW\include;vendor\imgui;vendor\ImGuizmo;vendor\glm;vendor\assimp\include;vendor\stb\include;vendor\fmod\include;vendor\entt\include;vendor\mono\include;vendor\yaml-cpp\include;vendor\HBAOPlus\include;vendor\ffx_sdk\include;C:\VulkanSDK\1.4.321.1\Include;vendor\VulkanSDK\Include;vendor\VulkanMemoryAllocator\include;vendor\D3D12MemoryAllocator\include;vendor\JoltPhysics\JoltPhysics;vendor\shaderc\include;vendor\vk-bootstrap\src;vendor\Glad\include;vendor\imgui-node-editor;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ConformanceMode>false</ConformanceMode>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>opengl32.lib;vulkan-1.lib;assimp-vc143-mt.lib;GFSDK_SSAO_D3D11.win64.lib;ffx_brixelizer_x64d.lib;Ws2_32.lib;Winmm.lib;Version.lib;Bcrypt.lib;fmod_vc.lib;libmono-static-sgen.lib;shaderc_combined.lib;JoltPhysics.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>lib;C:\VulkanSDK\1.4.321.1\Lib;lib\release;vendor\mono\lib\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Oeuvre\Common\CommonHeaders.h" />
+    <ClInclude Include="src\Oeuvre\Common\PrimitiveTypes.h" />
+    <ClInclude Include="src\Oeuvre\Core\Application.h" />
+    <ClInclude Include="src\Oeuvre\Core\EntryPoint.h" />
+    <ClInclude Include="src\Oeuvre\Core\Input.h" />
+    <ClInclude Include="src\Oeuvre\Core\KeyCodes.h" />
+    <ClInclude Include="src\Oeuvre\Core\Log.h" />
+    <ClInclude Include="src\Oeuvre\Core\MouseCodes.h" />
+    <ClInclude Include="src\Oeuvre\Core\UUID.h" />
+    <ClInclude Include="src\Oeuvre\Core\Win.h" />
+    <ClInclude Include="src\Oeuvre\Core\Window.h" />
+    <ClInclude Include="src\Oeuvre\Events\Event.h" />
+    <ClInclude Include="src\Oeuvre\Events\EventHandler.h" />
+    <ClInclude Include="src\Oeuvre\Events\KeyEvents.h" />
+    <ClInclude Include="src\Oeuvre\Events\MouseEvents.h" />
+    <ClInclude Include="src\Oeuvre\Events\WindowEvents.h" />
+    <ClInclude Include="src\Oeuvre\Physics\Intersections.h" />
+    <ClInclude Include="src\Oeuvre\Physics\Physics.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\AABB.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\AnimData.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Animation.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Animator.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Bone.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Buffer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Camera.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\ConstantBuffers.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Frustum.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\IBL.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Mesh.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Model.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IBuffer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ICommandList.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IDevice.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IFramebuffer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ISwapchain.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ITexture.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Renderer.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\RendererAPI.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\ResourceManager.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\Shader.h" />
+    <ClInclude Include="src\Oeuvre\Renderer\VertexArray.h" />
+    <ClInclude Include="src\Oeuvre\Scene\Components.h" />
+    <ClInclude Include="src\Oeuvre\Scene\Entity.h" />
+    <ClInclude Include="src\Oeuvre\Scene\EntityTemplates.h" />
+    <ClInclude Include="src\Oeuvre\Scene\Scene.h" />
+    <ClInclude Include="src\Oeuvre\Scene\SceneSerializer.h" />
+    <ClInclude Include="src\Oeuvre\Scene\ScriptableEntity.h" />
+    <ClInclude Include="src\Oeuvre\Scripting\ScriptEngine.h" />
+    <ClInclude Include="src\Oeuvre\Scripting\ScriptGlue.h" />
+    <ClInclude Include="src\Oeuvre\Terrain\Terrain.h" />
+    <ClInclude Include="src\Oeuvre\Utils\AssimpGLMHelpers.h" />
+    <ClInclude Include="src\Oeuvre\Utils\FileSystem.h" />
+    <ClInclude Include="src\Oeuvre\Utils\HelperMacros.h" />
+    <ClInclude Include="src\Oeuvre\Utils\LightCulling.h" />
+    <ClInclude Include="src\Oeuvre\Utils\Math.h" />
+    <ClInclude Include="src\Oeuvre\Utils\PlatformUtils.h" />
+    <ClInclude Include="src\Oeuvre\Utils\StringUtils.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Buffer.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11ComputeShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11DomainShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11GBuffer.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11GeometryShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11HullShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11InputLayout.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11PixelShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11RendererAPI.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Shader.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11Texture2D.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexArray.h" />
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexShader.h" />
+    <ClInclude Include="src\Platform\DirectX11\RenderTexture.h" />
+    <ClInclude Include="src\Platform\DirectX12\DX12RendererAPI.h" />
+    <ClInclude Include="src\Platform\DirectX12\DX12Texture2D.h" />
+    <ClInclude Include="src\Platform\DirectX12\ExampleDescriptorHeapAllocator.h" />
+    <ClInclude Include="src\Platform\DirectX12\GbufferD3D12.h" />
+    <ClInclude Include="src\Platform\DirectX12\RenderTextureD3D12.h" />
+    <ClInclude Include="src\Platform\DirectX12\UploadBuffer.h" />
+    <ClInclude Include="src\Platform\DirectX12\d3dUtil.h" />
+    <ClInclude Include="src\Platform\OpenGL\OGLRendererAPI.h" />
+    <ClInclude Include="src\Platform\OpenGL\OGLShader.h" />
+    <ClInclude Include="src\Platform\OpenGL\OGLTexture2D.h" />
+    <ClInclude Include="src\Platform\OpenGL\RenderTextureOGL.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkDescriptors.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkImages.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkInitializers.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkLoader.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkPipelines.h" />
+    <ClInclude Include="src\Platform\Vulkan\VkTypes.h" />
+    <ClInclude Include="src\Platform\Vulkan\VulkanRendererAPI.h" />
+    <ClInclude Include="src\Platform\Vulkan\VulkanTexture2D.h" />
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h" />
+    <ClInclude Include="src\ovpch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Oeuvre\Core\Application.cpp" />
+    <ClCompile Include="src\Oeuvre\Core\Input.cpp" />
+    <ClCompile Include="src\Oeuvre\Core\Log.cpp" />
+    <ClCompile Include="src\Oeuvre\Core\UUID.cpp" />
+    <ClCompile Include="src\Oeuvre\Events\EventHandler.cpp" />
+    <ClCompile Include="src\Oeuvre\Physics\Intersections.cpp" />
+    <ClCompile Include="src\Oeuvre\Physics\Physics.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Camera.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Frustum.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\IBL.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Mesh.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Model.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IBuffer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ICommandList.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IDevice.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IFramebuffer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ISwapchain.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ITexture.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\RendererAPI.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\ResourceManager.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Oeuvre\Renderer\VertexArray.cpp" />
+    <ClCompile Include="src\Oeuvre\Scene\Entity.cpp" />
+    <ClCompile Include="src\Oeuvre\Scene\Scene.cpp" />
+    <ClCompile Include="src\Oeuvre\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="src\Oeuvre\Scripting\ScriptEngine.cpp" />
+    <ClCompile Include="src\Oeuvre\Scripting\ScriptGlue.cpp" />
+    <ClCompile Include="src\Oeuvre\Terrain\Terrain.cpp" />
+    <ClCompile Include="src\Oeuvre\Utils\FileSystem.cpp" />
+    <ClCompile Include="src\Oeuvre\Utils\StringUtils.cpp" />
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\crude_json.cpp" />
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_canvas.cpp" />
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_node_editor.cpp" />
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_node_editor_api.cpp" />
+    <ClCompile Include="src\Oeuvre\Vendor\stb_image.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Buffer.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11ComputeShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11DomainShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11GBuffer.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11GeometryShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11HullShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11InputLayout.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11PixelShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11RendererAPI.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Shader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11Texture2D.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexArray.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexShader.cpp" />
+    <ClCompile Include="src\Platform\DirectX11\RenderTexture.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\DX12RendererAPI.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\DX12Texture2D.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\ExampleDescriptorHeapAllocator.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\GbufferD3D12.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\RenderTextureD3D12.cpp" />
+    <ClCompile Include="src\Platform\DirectX12\d3dUtil.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OGLRendererAPI.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OGLShader.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\OGLTexture2D.cpp" />
+    <ClCompile Include="src\Platform\OpenGL\RenderTextureOGL.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VkDescriptors.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VkImages.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VkInitializers.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VkPipelines.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VulkanRendererAPI.cpp" />
+    <ClCompile Include="src\Platform\Vulkan\VulkanTexture2D.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsPlatformUtils.cpp" />
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp" />
+    <ClCompile Include="src\ovpch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="vendor\GLFW\GLFW.vcxproj">
+      <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\imgui\imgui.vcxproj">
+      <Project>{0098A80F-6CAC-D0C0-352E-7420A101CDF1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\ImGuizmo\imguizmo.vcxproj">
+      <Project>{76AD0322-627A-5E2D-8B93-4CD577BF93BB}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\yaml-cpp\yaml-cpp.vcxproj">
+      <Project>{88F1A057-74BE-FB62-9DD7-E90A890331F1}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\vk-bootstrap\vk-bootstrap.vcxproj">
+      <Project>{91F412DC-7D57-A280-26DD-DA36121F6E03}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\Glad\Glad.vcxproj">
+      <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets" Condition="Exists('..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets')" />
+    <Import Project="..\packages\directxtex_desktop_win10.2024.10.29.1\build\native\directxtex_desktop_win10.targets" Condition="Exists('..\packages\directxtex_desktop_win10.2024.10.29.1\build\native\directxtex_desktop_win10.targets')" />
+    <Import Project="..\packages\nlohmann.json.3.11.3\build\native\nlohmann.json.targets" Condition="Exists('..\packages\nlohmann.json.3.11.3\build\native\nlohmann.json.targets')" />
+    <Import Project="..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.targets" Condition="Exists('..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.targets')" />
+    <Import Project="..\packages\directxtk12_desktop_win10.2025.3.21.3\build\native\directxtk12_desktop_win10.targets" Condition="Exists('..\packages\directxtk12_desktop_win10.2025.3.21.3\build\native\directxtk12_desktop_win10.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk_desktop_win10.2024.10.29.1\build\native\directxtk_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtex_desktop_win10.2024.10.29.1\build\native\directxtex_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtex_desktop_win10.2024.10.29.1\build\native\directxtex_desktop_win10.targets'))" />
+    <Error Condition="!Exists('..\packages\NVAPI.1.0.440\build\NVAPI.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\NVAPI.1.0.440\build\NVAPI.props'))" />
+    <Error Condition="!Exists('..\packages\nlohmann.json.3.11.3\build\native\nlohmann.json.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\nlohmann.json.3.11.3\build\native\nlohmann.json.targets'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.props'))" />
+    <Error Condition="!Exists('..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Direct3D.D3D12.1.615.1\build\native\Microsoft.Direct3D.D3D12.targets'))" />
+    <Error Condition="!Exists('..\packages\directxtk12_desktop_win10.2025.3.21.3\build\native\directxtk12_desktop_win10.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk12_desktop_win10.2025.3.21.3\build\native\directxtk12_desktop_win10.targets'))" />
+  </Target>
+</Project>

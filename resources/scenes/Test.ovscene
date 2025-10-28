@@ -1,0 +1,595 @@
+Scene: Untitled Scene
+Entities:
+  - Entity: 13194355901920569274
+    TagComponent:
+      Tag: Scene
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 0
+      First: 1
+      Prev: 4294967295
+      Next: 4294967295
+      Parent: 4294967295
+  - Entity: 5372987555045450317
+    TagComponent:
+      Tag: Colt
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, -0, 0]
+      Scale: [5, 5, 5]
+    RelationshipComponent:
+      Curr: 1
+      First: 4294967295
+      Prev: 4294967295
+      Next: 2
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/colt_python/source/revolver_game.fbx
+      AlbedoTexturePath: ../resources/models/colt_python/textures/M_WP_Revolver_albedo.jpg
+      NormalTexturePath: ../resources/models/colt_python/textures/M_WP_Revolver_normal.png
+      RoughnessTexturePath: ../resources/models/colt_python/textures/M_WP_Revolver_roughness.jpg
+      MetallicTexturePath: ../resources/models/colt_python/textures/M_WP_Revolver_metallic.jpg
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 9924215118660070128
+    TagComponent:
+      Tag: Sponza
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 90, 0]
+      Scale: [0.01, 0.01, 0.01]
+    RelationshipComponent:
+      Curr: 2
+      First: 4294967295
+      Prev: 1
+      Next: 3
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/sponza/glTF/Sponza.gltf
+      AlbedoTexturePath: ""
+      NormalTexturePath: ""
+      RoughnessTexturePath: ""
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: false
+  - Entity: 13049827034461304904
+    TagComponent:
+      Tag: Player
+    TransformComponent:
+      Translation: [15.07177, 0, -0.6594631]
+      Rotation: [180, -30.34886, 180]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 3
+      First: 4294967295
+      Prev: 2
+      Next: 4
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 13411813167617515033
+    TagComponent:
+      Tag: Zombie
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [180, 87.49478, 180]
+      Scale: [0.01, 0.01, 0.01]
+    RelationshipComponent:
+      Curr: 4
+      First: 4294967295
+      Prev: 3
+      Next: 5
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Cop_Zombie_model_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/cop_zombie/FuzZombie_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/cop_zombie/FuzZombie_normal.png
+      RoughnessTexturePath: ""
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 18403112386239031988
+    TagComponent:
+      Tag: Dude0
+    TransformComponent:
+      Translation: [15, 0, 4]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 5
+      First: 4294967295
+      Prev: 4
+      Next: 6
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 10631202117546711006
+    TagComponent:
+      Tag: Dude1
+    TransformComponent:
+      Translation: [15, 0, 6]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 6
+      First: 4294967295
+      Prev: 5
+      Next: 7
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 702421750956414249
+    TagComponent:
+      Tag: Dude2
+    TransformComponent:
+      Translation: [15, 0, 8]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 7
+      First: 4294967295
+      Prev: 6
+      Next: 8
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 8902904120936910498
+    TagComponent:
+      Tag: Dude3
+    TransformComponent:
+      Translation: [15, 0, 10]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 8
+      First: 4294967295
+      Prev: 7
+      Next: 9
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 803419397294293488
+    TagComponent:
+      Tag: Dude4
+    TransformComponent:
+      Translation: [15, 0, 12]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 9
+      First: 4294967295
+      Prev: 8
+      Next: 10
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 2596968962605432714
+    TagComponent:
+      Tag: Dude5
+    TransformComponent:
+      Translation: [15, 0, 14]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 10
+      First: 4294967295
+      Prev: 9
+      Next: 11
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 11454568283368924649
+    TagComponent:
+      Tag: Dude6
+    TransformComponent:
+      Translation: [15, 0, 16]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 11
+      First: 4294967295
+      Prev: 10
+      Next: 12
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 7653973044248329613
+    TagComponent:
+      Tag: Dude7
+    TransformComponent:
+      Translation: [15, 0, 18]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 12
+      First: 4294967295
+      Prev: 11
+      Next: 13
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 8627020262962980865
+    TagComponent:
+      Tag: Dude8
+    TransformComponent:
+      Translation: [15, 0, 20]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 13
+      First: 4294967295
+      Prev: 12
+      Next: 14
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 18204513855634179517
+    TagComponent:
+      Tag: Dude9
+    TransformComponent:
+      Translation: [15, 0, 22]
+      Rotation: [0, -0, 0]
+      Scale: [0.012499999, 0.012499999, 0.012499999]
+    RelationshipComponent:
+      Curr: 14
+      First: 4294967295
+      Prev: 13
+      Next: 15
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/animations/mixamo/Walking_fixed.fbx
+      AlbedoTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_diffuse.png
+      NormalTexturePath: ../resources/animations/mixamo/eve/SpacePirate_M_normal.png
+      RoughnessTexturePath: ../resources/textures/white.png
+      MetallicTexturePath: ../resources/textures/black.png
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 10447880438882148926
+    TagComponent:
+      Tag: Platform0
+    TransformComponent:
+      Translation: [11, 2, 4]
+      Rotation: [-90, 0, 0]
+      Scale: [0.099999994, 0.099999994, 0.099999994]
+    RelationshipComponent:
+      Curr: 15
+      First: 4294967295
+      Prev: 14
+      Next: 16
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 6361589386543764546
+    TagComponent:
+      Tag: Platform1
+    TransformComponent:
+      Translation: [11, 4, 6]
+      Rotation: [-90, 0, 0]
+      Scale: [0.099999994, 0.099999994, 0.099999994]
+    RelationshipComponent:
+      Curr: 16
+      First: 4294967295
+      Prev: 15
+      Next: 17
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 1304221231266722326
+    TagComponent:
+      Tag: Platform2
+    TransformComponent:
+      Translation: [11, 6, 8]
+      Rotation: [-90, 0, 0]
+      Scale: [0.099999994, 0.099999994, 0.099999994]
+    RelationshipComponent:
+      Curr: 17
+      First: 4294967295
+      Prev: 16
+      Next: 18
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 15198842491577379616
+    TagComponent:
+      Tag: Platform3
+    TransformComponent:
+      Translation: [11, 8, 10]
+      Rotation: [-90, 0, 0]
+      Scale: [0.099999994, 0.099999994, 0.099999994]
+    RelationshipComponent:
+      Curr: 18
+      First: 4294967295
+      Prev: 17
+      Next: 19
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 16911122207010264644
+    TagComponent:
+      Tag: Platform4
+    TransformComponent:
+      Translation: [11, 10, 12]
+      Rotation: [-90, 0, 0]
+      Scale: [0.099999994, 0.099999994, 0.099999994]
+    RelationshipComponent:
+      Curr: 19
+      First: 4294967295
+      Prev: 18
+      Next: 20
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 11942144641199530685
+    TagComponent:
+      Tag: Platform5
+    TransformComponent:
+      Translation: [24.25204, -0.09978044, -3.0158858]
+      Rotation: [-90, 0, 0]
+      Scale: [12.726625, 11.48249, 0.09999993]
+    RelationshipComponent:
+      Curr: 20
+      First: 4294967295
+      Prev: 19
+      Next: 21
+      Parent: 0
+    MeshComponent:
+      FilePath: ../resources/models/platform.fbx
+      AlbedoTexturePath: ../resources/textures/wood_planks_4k/wood_planks_diff_4k.png
+      NormalTexturePath: ../resources/textures/wood_planks_4k/wood_planks_nor_dx_4k.png
+      RoughnessTexturePath: ../resources/textures/wood_planks_4k/wood_planks_rough_4k.png
+      MetallicTexturePath: ""
+      UseNormalMap: true
+      Color: [1, 1, 1]
+      Roughness: 1
+      Metallic: 0
+      Emission: 0
+      CombinedTextures: true
+  - Entity: 3212966240980833259
+    TagComponent:
+      Tag: PointLight
+    TransformComponent:
+      Translation: [0, 2.1, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 21
+      First: 4294967295
+      Prev: 20
+      Next: 22
+      Parent: 0
+    PointLightComponent:
+      Range: 5
+      Intensity: 1
+      Color: [1, 1, 1]
+  - Entity: 16111626232221238722
+    TagComponent:
+      Tag: PointLight1
+    TransformComponent:
+      Translation: [3, 0.48, -0.295]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 22
+      First: 4294967295
+      Prev: 21
+      Next: 23
+      Parent: 0
+    PointLightComponent:
+      Range: 5
+      Intensity: 1
+      Color: [1, 1, 1]
+  - Entity: 2754671847181237941
+    TagComponent:
+      Tag: PointLight2
+    TransformComponent:
+      Translation: [-3, 0.35999998, 1.9499999]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 23
+      First: 4294967295
+      Prev: 22
+      Next: 24
+      Parent: 0
+    PointLightComponent:
+      Range: 5
+      Intensity: 1
+      Color: [1, 1, 1]
+  - Entity: 10881239656460772833
+    TagComponent:
+      Tag: Camera
+    TransformComponent:
+      Translation: [24.651995, 2.0460887, -7.553003]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 24
+      First: 4294967295
+      Prev: 23
+      Next: 25
+      Parent: 0
+    CameraComponent:
+      MovementSpeed: 10
+      Primary: true
+  - Entity: 17281941444489813868
+    TagComponent:
+      Tag: SunLight
+    TransformComponent:
+      Translation: [20, 0, 5]
+      Rotation: [55.290897, 19.019026, 22.831959]
+      Scale: [1, 1, 1]
+    RelationshipComponent:
+      Curr: 25
+      First: 4294967295
+      Prev: 24
+      Next: 4294967295
+      Parent: 0

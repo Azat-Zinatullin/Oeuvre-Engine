@@ -1,0 +1,558 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre">
+      <UniqueIdentifier>{F23FEB24-DEF7-2C72-47FF-05CE33D6C762}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Common">
+      <UniqueIdentifier>{EAA87A5E-56BF-78F4-9F36-04160B8C497C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Core">
+      <UniqueIdentifier>{8A2BC41C-F6B6-31E1-FFC7-B4D56BD28DE1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Events">
+      <UniqueIdentifier>{96479F63-025E-9DF9-4BD5-281BB72A6E81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Physics">
+      <UniqueIdentifier>{64150D07-50F9-CD5C-B959-C8AFA55CB8DE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Renderer">
+      <UniqueIdentifier>{D8938ABF-44F5-67CD-CD62-AE7F39C39E8C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Renderer\RHI">
+      <UniqueIdentifier>{0AECFBE7-7623-447F-7F2D-A8A2EBE36A78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Scene">
+      <UniqueIdentifier>{8F5A64B6-7B53-8308-A485-688D90DD6214}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Scripting">
+      <UniqueIdentifier>{74CB308D-605A-BA56-0979-CE51F5E6CAFC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Terrain">
+      <UniqueIdentifier>{56357733-4219-3889-AB79-32DC977C220B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Utils">
+      <UniqueIdentifier>{D2EE91B6-BEE7-B008-E719-968DD3719014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Vendor">
+      <UniqueIdentifier>{EF1D188A-5B34-1620-A4AB-A1411001E7A7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Oeuvre\Vendor\imgui-node-editor">
+      <UniqueIdentifier>{60825ECC-CC3B-C976-559B-E350C1537FE6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform">
+      <UniqueIdentifier>{21CA02E5-0D2D-9289-B6B2-CA3FA2F45D0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\DirectX11">
+      <UniqueIdentifier>{2549C2B7-1143-EB09-FAAF-811AE6485176}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\DirectX12">
+      <UniqueIdentifier>{2649C2B7-1243-EB09-FBAF-811AE7485176}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\OpenGL">
+      <UniqueIdentifier>{35A49437-A105-7245-2A73-B8F796D3A804}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\Vulkan">
+      <UniqueIdentifier>{81084748-ED69-2456-76D7-6A08E2375B15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Platform\Windows">
+      <UniqueIdentifier>{5B054582-4794-CE4B-F0B2-E246DC20DFF1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Oeuvre\Common\CommonHeaders.h">
+      <Filter>src\Oeuvre\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Common\PrimitiveTypes.h">
+      <Filter>src\Oeuvre\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Application.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\EntryPoint.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Input.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\KeyCodes.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Log.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\MouseCodes.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\UUID.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Win.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Core\Window.h">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\Event.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\EventHandler.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\KeyEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\MouseEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Events\WindowEvents.h">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Physics\Intersections.h">
+      <Filter>src\Oeuvre\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Physics\Physics.h">
+      <Filter>src\Oeuvre\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\AABB.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\AnimData.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Animation.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Animator.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Bone.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Buffer.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Camera.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\ConstantBuffers.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Frustum.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\IBL.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Mesh.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Model.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IBuffer.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ICommandList.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IDevice.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\IFramebuffer.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ISwapchain.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RHI\ITexture.h">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Renderer.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\RendererAPI.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\ResourceManager.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\Shader.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Renderer\VertexArray.h">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\Components.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\Entity.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\EntityTemplates.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\Scene.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\SceneSerializer.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scene\ScriptableEntity.h">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scripting\ScriptEngine.h">
+      <Filter>src\Oeuvre\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Scripting\ScriptGlue.h">
+      <Filter>src\Oeuvre\Scripting</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Terrain\Terrain.h">
+      <Filter>src\Oeuvre\Terrain</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\AssimpGLMHelpers.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\FileSystem.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\HelperMacros.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\LightCulling.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\Math.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\PlatformUtils.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Oeuvre\Utils\StringUtils.h">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Buffer.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11ComputeShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11DomainShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11GBuffer.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11GeometryShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11HullShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11InputLayout.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11PixelShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11RendererAPI.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Shader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11Texture2D.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexArray.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\DX11VertexShader.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX11\RenderTexture.h">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\DX12RendererAPI.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\DX12Texture2D.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\ExampleDescriptorHeapAllocator.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\GbufferD3D12.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\RenderTextureD3D12.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\UploadBuffer.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\DirectX12\d3dUtil.h">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OGLRendererAPI.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OGLShader.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\OGLTexture2D.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\OpenGL\RenderTextureOGL.h">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkDescriptors.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkImages.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkInitializers.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkLoader.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkPipelines.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VkTypes.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VulkanRendererAPI.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Vulkan\VulkanTexture2D.h">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Platform\Windows\WindowsWindow.h">
+      <Filter>src\Platform\Windows</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ovpch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Oeuvre\Core\Application.cpp">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Core\Input.cpp">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Core\Log.cpp">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Core\UUID.cpp">
+      <Filter>src\Oeuvre\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Events\EventHandler.cpp">
+      <Filter>src\Oeuvre\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Physics\Intersections.cpp">
+      <Filter>src\Oeuvre\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Physics\Physics.cpp">
+      <Filter>src\Oeuvre\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Buffer.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Camera.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Frustum.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\IBL.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Mesh.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Model.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IBuffer.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ICommandList.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IDevice.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\IFramebuffer.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ISwapchain.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RHI\ITexture.cpp">
+      <Filter>src\Oeuvre\Renderer\RHI</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Renderer.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\RendererAPI.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\ResourceManager.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\Shader.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Renderer\VertexArray.cpp">
+      <Filter>src\Oeuvre\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Scene\Entity.cpp">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Scene\Scene.cpp">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Scene\SceneSerializer.cpp">
+      <Filter>src\Oeuvre\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Scripting\ScriptEngine.cpp">
+      <Filter>src\Oeuvre\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Scripting\ScriptGlue.cpp">
+      <Filter>src\Oeuvre\Scripting</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Terrain\Terrain.cpp">
+      <Filter>src\Oeuvre\Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Utils\FileSystem.cpp">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Utils\StringUtils.cpp">
+      <Filter>src\Oeuvre\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\crude_json.cpp">
+      <Filter>src\Oeuvre\Vendor\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_canvas.cpp">
+      <Filter>src\Oeuvre\Vendor\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_node_editor.cpp">
+      <Filter>src\Oeuvre\Vendor\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Vendor\imgui-node-editor\imgui_node_editor_api.cpp">
+      <Filter>src\Oeuvre\Vendor\imgui-node-editor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Oeuvre\Vendor\stb_image.cpp">
+      <Filter>src\Oeuvre\Vendor</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Buffer.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11ComputeShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11DomainShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11GBuffer.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11GeometryShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11HullShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11InputLayout.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11PixelShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11RendererAPI.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Shader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11Texture2D.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexArray.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\DX11VertexShader.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX11\RenderTexture.cpp">
+      <Filter>src\Platform\DirectX11</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\DX12RendererAPI.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\DX12Texture2D.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\ExampleDescriptorHeapAllocator.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\GbufferD3D12.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\RenderTextureD3D12.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\DirectX12\d3dUtil.cpp">
+      <Filter>src\Platform\DirectX12</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OGLRendererAPI.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OGLShader.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\OGLTexture2D.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\OpenGL\RenderTextureOGL.cpp">
+      <Filter>src\Platform\OpenGL</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VkDescriptors.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VkImages.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VkInitializers.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VkPipelines.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VulkanRendererAPI.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Vulkan\VulkanTexture2D.cpp">
+      <Filter>src\Platform\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Windows\WindowsPlatformUtils.cpp">
+      <Filter>src\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Platform\Windows\WindowsWindow.cpp">
+      <Filter>src\Platform\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ovpch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>
