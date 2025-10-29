@@ -1,6 +1,6 @@
 # Oeuvre-Engine
 
-My first game engine, which I am developing for educational and experimental purposes.
+This is a small game engine that I am developing for educational purposes. Feel free to use the techniques from my code in your own projects.
 
 <img width="1477" height="1226" alt="Screenshot 2025-10-29 175518" src="https://github.com/user-attachments/assets/fd6d0390-17f3-4247-b5c6-6e228f4505cc" />
 
