@@ -2,7 +2,7 @@
 
 My first game engine, which I am developing for educational and experimental purposes.
 
-![image 2025-02-11 17-28-32-429](https://github.com/user-attachments/assets/1b159c25-60c4-4503-ae41-d6e9a416b278)
+<img width="1477" height="1226" alt="Screenshot 2025-10-29 175518" src="https://github.com/user-attachments/assets/fd6d0390-17f3-4247-b5c6-6e228f4505cc" />
 
 ### Current features
 - IBL PBR
