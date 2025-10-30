@@ -20,7 +20,7 @@ WASD: camera/character movement<br>
 C: toggle viewport mode<br>
 Q: toggle gizmo local/world mode<br>
 W/E/R: select gizmo translate/rotate/scale operation<br>
-F: throw a cube (physics demo)
+F: throw a cube (physics demo)<br>
 F11: toggle fullscreen (borderless window)
 
 ### Download
